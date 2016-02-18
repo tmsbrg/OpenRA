@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Widgets;
 
@@ -62,8 +63,14 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				var br = new PPos(width, height + maxTerrainHeight);
 				map.SetBounds(tl, br);
 
-				map.PlayerDefinitions = new MapPlayers(map.Rules, 0).ToMiniYaml();
+				MapPlayers mapPlayers = new MapPlayers(map.Rules, 0);
 				map.FixOpenAreas();
+
+				// for map generation testing
+				GenerateRandomMap(map, mapPlayers);
+
+				// done after generating map, so map generation can add players
+				map.PlayerDefinitions = mapPlayers.ToMiniYaml();
 
 				Action<string> afterSave = uid =>
 				{
@@ -90,6 +97,50 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					{ "actorDefinitions", map.ActorDefinitions }
 				});
 			};
+		}
+
+		void GenerateRandomMap(Map map, MapPlayers mapPlayers) {
+
+			var players = mapPlayers.Players;
+			var mapRules = map.Rules;
+
+			if (!mapRules.Actors.ContainsKey("mpspawn")) return;
+			if (!players.ContainsKey("Creeps")) return;
+
+			var mpspawn = mapRules.Actors["mpspawn"];
+			var creeps = players["Creeps"];
+
+			var spawnLocations = new [] {
+				new CPos(24, 3),
+				new CPos(39, -3)
+			};
+
+			var num = 0;
+			foreach (var location in spawnLocations) {
+				var spawn = new ActorReference(mpspawn.Name);
+				spawn.Add(new OwnerInit(creeps.Name));
+
+				spawn.Add(new LocationInit(location));
+
+				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+num, spawn.Save()));
+				num++;
+			}
+
+
+			var creepEnemies = new List<string>();
+			for (var i = 0; i < num; i++) {
+				var name = "Multi"+i;
+				var player = new PlayerReference
+				{
+					Name = name,
+					Playable = true,
+					Faction = "Random",
+					Enemies = new [] { "Creeps" }
+				};
+				players.Add(name, player);
+				creepEnemies.Add(name);
+			}
+			creeps.Enemies = creepEnemies.ToArray();
 		}
 	}
 }
