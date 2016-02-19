@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Widgets;
+using OpenRA.Mods.Common.Traits;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
@@ -67,7 +68,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				map.FixOpenAreas();
 
 				// for map generation testing
-				GenerateRandomMap(map, mapPlayers);
+				GenerateRandomMap(map, mapPlayers, world);
 
 				// done after generating map, so map generation can add players
 				map.PlayerDefinitions = mapPlayers.ToMiniYaml();
@@ -99,36 +100,51 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			};
 		}
 
-		void GenerateRandomMap(Map map, MapPlayers mapPlayers) {
-
+		void GenerateRandomMap(Map map, MapPlayers mapPlayers, World world)
+		{
 			var players = mapPlayers.Players;
-			var mapRules = map.Rules;
+			var actors = map.Rules.Actors;
+			var mines = actors.Values.Where(a => a.TraitInfoOrDefault<SeedsResourceInfo>() != null && !a.Name.StartsWith("^"));
 
-			if (!mapRules.Actors.ContainsKey("mpspawn")) return;
+			if (!actors.ContainsKey("mpspawn")) return;
+			if (!players.ContainsKey("Neutral")) return;
 			if (!players.ContainsKey("Creeps")) return;
+			if (!mines.Any()) return;
 
-			var mpspawn = mapRules.Actors["mpspawn"];
+			var mpspawn = actors["mpspawn"];
+			var neutral = players["Neutral"];
 			var creeps = players["Creeps"];
+			var mineReference = mines.First();
 
-			var spawnLocations = new [] {
-				new CPos(24, 3),
-				new CPos(39, -3)
+			var spawnLocations = new []
+			{
+				new MPos(24, 24),
+				new MPos(48, 48)
 			};
 
 			var num = 0;
-			foreach (var location in spawnLocations) {
+			foreach (var location in spawnLocations)
+			{
 				var spawn = new ActorReference(mpspawn.Name);
 				spawn.Add(new OwnerInit(creeps.Name));
 
-				spawn.Add(new LocationInit(location));
+				spawn.Add(new LocationInit(location.ToCPos(map)));
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+num, spawn.Save()));
 				num++;
 			}
 
+			var mine = new ActorReference(mineReference.Name);
+			mine.Add(new OwnerInit(creeps.Name));
+
+			mine.Add(new LocationInit(new MPos(36, 36).ToCPos(map)));
+
+			map.ActorDefinitions.Add(new MiniYamlNode("Actor"+num, mine.Save()));
+
 
 			var creepEnemies = new List<string>();
-			for (var i = 0; i < num; i++) {
+			for (var i = 0; i < num; i++)
+			{
 				var name = "Multi"+i;
 				var player = new PlayerReference
 				{
