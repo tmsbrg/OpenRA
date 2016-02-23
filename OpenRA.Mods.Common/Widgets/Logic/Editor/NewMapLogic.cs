@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Widgets;
 using OpenRA.Support;
+using OpenRA.Traits;
 using OpenRA.Mods.Common.Traits;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
@@ -129,6 +130,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var actors = map.Rules.Actors;
 			var rng = world.SharedRandom;
 			var mines = actors.Values.Where(a => a.TraitInfoOrDefault<SeedsResourceInfo>() != null && !a.Name.StartsWith("^"));
+			var resources = world.WorldActor.TraitsImplementing<ResourceType>();
 
 			if (!actors.ContainsKey("mpspawn")) return;
 			if (!players.ContainsKey("Neutral")) return;
@@ -139,7 +141,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var creeps = players["Creeps"];
 
 			var mpspawn = actors["mpspawn"];
-			var mineReference = mines.First();
+			var mineInfo = mines.First();
 
 			var spawnLocations = new []
 			{
@@ -158,12 +160,42 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
 				// add mine
-				var mine = new ActorReference(mineReference.Name);
+				var mine = new ActorReference(mineInfo.Name);
 				mine.Add(new OwnerInit(neutral.Name));
 
-				mine.Add(new LocationInit(GetMineLocation(location, rng, map).ToCPos(map)));
+				var mineLocation = GetMineLocation(location, rng, map).ToCPos(map);
+
+				mine.Add(new LocationInit(mineLocation));
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), mine.Save()));
+
+				// add resources around mine
+				// TODO: check like AllowResourceAt
+
+				var resourceCells = new []
+				{
+					mineLocation,
+					mineLocation + new CVec(1, 0),
+					mineLocation + new CVec(-1, 0),
+					mineLocation + new CVec(0, 1),
+					mineLocation + new CVec(0, -1),
+					mineLocation + new CVec(1, 1),
+					mineLocation + new CVec(1, -1),
+					mineLocation + new CVec(-1, 1),
+					mineLocation + new CVec(-1, -1)
+				};
+
+				foreach (var cell in resourceCells)
+				{
+					var resourceName = mineInfo.TraitInfo<SeedsResourceInfo>().ResourceType;
+					var resourceType = resources.Where(t => t.Info.Name == resourceName)
+						.Select(t => t.Info).FirstOrDefault();
+
+					var type = (byte)resourceType.ResourceType;
+					var index = (byte)resourceType.MaxDensity;
+
+					map.MapResources.Value[cell] = new ResourceTile(type, index);
+				}
 			}
 
 
