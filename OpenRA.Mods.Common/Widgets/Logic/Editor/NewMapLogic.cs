@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Widgets;
@@ -102,6 +103,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			};
 		}
 
+		int mineDistance = 10;
+
 		CVec GetRandomVecWithDistance(float distance, MersenneTwister rng)
 		{
 			var angle = rng.NextFloat() * Math.PI * 2;
@@ -115,7 +118,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var spawnLocationCell = spawnLocation.ToCPos(map);
 
 			// assumes this location is valid(inside map and not intersecting with enemy)
-			return (spawnLocationCell + GetRandomVecWithDistance(10, rng)).ToMPos(map);
+			return (spawnLocationCell + GetRandomVecWithDistance((float)mineDistance, rng)).ToMPos(map);
 		}
 
 		int actorNum = 0;
@@ -123,6 +126,43 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		{
 			return actorNum++;
 		}
+
+		bool CanPlacePlayer(MPos pos, int size, List<MPos> spawnLocations, Map map)
+		{
+			var cpos = pos.ToCPos(map);
+			foreach (var location in spawnLocations)
+			{
+				var otherpos = location.ToCPos(map);
+				var distance = (otherpos - cpos).Length;
+				if (distance < size * 2 ) return false;
+			}
+			return true;
+		}
+
+		List<MPos> TryGetSpawnLocations(int playerNum, int playerLandSize, Map map, MersenneTwister rng, Rectangle bounds)
+		{
+			var spawnLocations = new List<MPos>();
+			for (var i = 0; i < playerNum; i++)
+			{
+				var tries = 10;
+				var success = false;
+				for (var t = 0; t < tries; t++)
+				{
+					success = false;
+					var pos = new MPos(rng.Next(bounds.Left, bounds.Right),
+									   rng.Next(bounds.Top, bounds.Bottom));
+					if (CanPlacePlayer(pos, playerLandSize, spawnLocations, map))
+					{
+						spawnLocations.Add(pos);
+						success = true;
+						break;
+					}
+				}
+				if (!success) break;
+			}
+			return spawnLocations;
+		}
+
 
 		void GenerateRandomMap(Map map, MapPlayers mapPlayers, World world)
 		{
@@ -143,11 +183,41 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var mpspawn = actors["mpspawn"];
 			var mineInfo = mines.First();
 
-			var spawnLocations = new []
+			var playerMinDistance = 4;
+			var playerLandSize = mineDistance + playerMinDistance;
+			var playerNum = 5;
+
+			var bounds = Rectangle.FromLTRB(
+					map.Bounds.Left + playerLandSize,
+					map.Bounds.Top + playerLandSize,
+					map.Bounds.Right - playerLandSize,
+					map.Bounds.Bottom - playerLandSize);
+
+			if (bounds.Left >= bounds.Right || bounds.Top >= bounds.Bottom) return;
+
+			var spawnLocations = new List<MPos>();
+			var bestSpawnLocationsNum = 0;
+			var bestSpawnLocations = new List<MPos>();
+			var tries = 20;
+			for (var t = 0; t < tries; t++)
 			{
-				new MPos(24, 24),
-				new MPos(48, 48)
-			};
+				spawnLocations = TryGetSpawnLocations(playerNum, playerLandSize, map, rng, bounds);
+				if (spawnLocations.Count() == playerNum)
+				{
+					break;
+				}
+				else if (spawnLocations.Count() > bestSpawnLocationsNum)
+				{
+					bestSpawnLocations = spawnLocations;
+					bestSpawnLocationsNum = spawnLocations.Count();
+				}
+			}
+			if (spawnLocations.Count() != playerNum)
+			{
+				spawnLocations = bestSpawnLocations;
+				playerNum = bestSpawnLocationsNum;
+				Console.WriteLine("Couldn't place all players(placed "+spawnLocations.Count()+" instead of "+playerNum+")");
+			}
 
 			foreach (var location in spawnLocations)
 			{
@@ -201,7 +271,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 
 			var creepEnemies = new List<string>();
-			var playerNum = spawnLocations.Count();
 			for (var i = 0; i < playerNum; i++)
 			{
 				var name = "Multi"+i;
