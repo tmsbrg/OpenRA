@@ -139,6 +139,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			return true;
 		}
 
+		MPos RandomLocation(Rectangle bounds, MersenneTwister rng)
+		{
+			return new MPos(rng.Next(bounds.Left, bounds.Right), rng.Next(bounds.Top, bounds.Bottom));
+		}
+
 		List<MPos> TryGetSpawnLocations(int playerNum, int playerLandSize, Map map, MersenneTwister rng, Rectangle bounds)
 		{
 			var spawnLocations = new List<MPos>();
@@ -149,8 +154,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				for (var t = 0; t < tries; t++)
 				{
 					success = false;
-					var pos = new MPos(rng.Next(bounds.Left, bounds.Right),
-									   rng.Next(bounds.Top, bounds.Bottom));
+					var pos = RandomLocation(bounds, rng);
 					if (CanPlaceActor(pos, playerLandSize * 2, spawnLocations, map))
 					{
 						spawnLocations.Add(pos);
@@ -186,6 +190,78 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			return mineLocations;
 		}
 
+		List <MPos> TryGetExtraResourceLocations(int mineNum, int minDistance, List<MPos> spawnLocations,
+				int playerDistance, MersenneTwister rng, Rectangle bounds, Map map)
+		{
+			var mineLocations = new List<MPos>();
+			for (var i = 0; i < mineNum; i++)
+			{
+				var tries = 10;
+				var success = false;
+				for (var t = 0; t < tries; t++)
+				{
+					success = false;
+					var pos = RandomLocation(bounds, rng);
+					if (CanPlaceActor(pos, playerDistance, spawnLocations, map) &&
+						CanPlaceActor(pos, minDistance, mineLocations, map))
+					{
+						mineLocations.Add(pos);
+						success = true;
+						break;
+					}
+				}
+				if (!success) break;
+			}
+			return mineLocations;
+		}
+
+
+		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, World world)
+		{
+			var resources = world.WorldActor.TraitsImplementing<ResourceType>();
+			var resourceLayer = map.MapResources.Value;
+			var rng = world.SharedRandom;
+
+			var mine = new ActorReference(mineInfo.Name);
+			mine.Add(new OwnerInit("Neutral"));
+
+			mine.Add(new LocationInit(location.ToCPos(map)));
+
+			map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), mine.Save()));
+
+			// add resources around mine
+			var resourceName = mineInfo.TraitInfo<SeedsResourceInfo>().ResourceType;
+			var resourceType = resources.Where(t => t.Info.Name == resourceName)
+				.Select(t => t.Info).FirstOrDefault();
+
+			var type = (byte)resourceType.ResourceType;
+			var index = (byte)resourceType.MaxDensity;
+
+			for (var i = 0; i < size; i++)
+			{
+				var tries = 10;
+				var success = false;
+				for (var t = 0; t < tries; t++)
+				{
+					var cell = Util.RandomWalk(location.ToCPos(map), rng)
+						.Take(size)
+						.SkipWhile(p => !resourceLayer.Contains(p) ||
+								resourceLayer[p].Type != 0)
+						.Cast<CPos?>().FirstOrDefault();
+
+					if (cell != null)
+					{
+						resourceLayer[cell.Value] = new ResourceTile(type, index);
+						success = true;
+						break;
+					}
+				}
+				if (!success)
+				{
+					break;
+				}
+			}
+		}
 
 		void GenerateRandomMap(Map map, MapPlayers mapPlayers, World world)
 		{
@@ -193,8 +269,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var actors = map.Rules.Actors;
 			var rng = world.SharedRandom;
 			var mineTypes = actors.Values.Where(a => a.TraitInfoOrDefault<SeedsResourceInfo>() != null && !a.Name.StartsWith("^"));
-			var resources = world.WorldActor.TraitsImplementing<ResourceType>();
-			var resourceLayer = map.MapResources.Value;
 
 			if (!actors.ContainsKey("mpspawn")) return;
 			if (!players.ContainsKey("Neutral")) return;
@@ -211,9 +285,13 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var playerLandSize = mineDistance + playerMinDistance;
 			var playerNum = 5;
 
-			var startingResourceSize = 64;
-			var startingMineNum = 3;
+			var startingResourceSize = 32;
+			var startingMineNum = 2;
 			var startingMineMinDistance = 4;
+
+			var extraResourceSize = 42;
+			var extraMineNum = 10;
+			var extraMineDistance = 10;
 
 			var bounds = Rectangle.FromLTRB(
 					map.Bounds.Left + playerLandSize,
@@ -262,50 +340,17 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				// add mines around spawn points
 				foreach (var mineLocation in mineLocations)
 				{
-					var mine = new ActorReference(mineInfo.Name);
-					mine.Add(new OwnerInit(neutral.Name));
-
-
-					mine.Add(new LocationInit(mineLocation.ToCPos(map)));
-
-					map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), mine.Save()));
-
-					// add resources around mine
-					var resourceName = mineInfo.TraitInfo<SeedsResourceInfo>().ResourceType;
-					var resourceType = resources.Where(t => t.Info.Name == resourceName)
-						.Select(t => t.Info).FirstOrDefault();
-
-					var type = (byte)resourceType.ResourceType;
-					var index = (byte)resourceType.MaxDensity;
-
-					for (var i = 0; i < startingResourceSize; i++)
-					{
-						tries = 10;
-						var success = false;
-						for (var t = 0; t < tries; t++)
-						{
-							var cell = Util.RandomWalk(mineLocation.ToCPos(map), rng)
-								.Take(startingResourceSize)
-								.SkipWhile(p => !resourceLayer.Contains(p) ||
-										resourceLayer[p].Type != 0)
-								.Cast<CPos?>().FirstOrDefault();
-
-							if (cell != null)
-							{
-								resourceLayer[cell.Value] = new ResourceTile(type, index);
-								success = true;
-								break;
-							}
-						}
-						if (!success)
-						{
-							break;
-						}
-					}
+					PlaceResourceMine(mineLocation, startingResourceSize, mineInfo, map, world);
 				}
 			}
 
+			var extraResourceLocations = TryGetExtraResourceLocations(extraMineNum, extraMineDistance,
+					spawnLocations, playerLandSize, rng, bounds, map);
 
+			foreach (var location in extraResourceLocations)
+			{
+				PlaceResourceMine(location, extraResourceSize, mineInfo, map, world);
+			}
 
 			var creepEnemies = new List<string>();
 			for (var i = 0; i < playerNum; i++)
