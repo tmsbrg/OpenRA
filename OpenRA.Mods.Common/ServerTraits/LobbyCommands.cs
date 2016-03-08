@@ -348,6 +348,7 @@ namespace OpenRA.Mods.Common.Server
 							if (server.LobbyInfo.GlobalSettings.Map != lastMap)
 								return;
 
+							server.LobbyInfo.GlobalSettings.RandomMap = false;
 							server.LobbyInfo.GlobalSettings.Map = map.Uid;
 
 							var oldSlots = server.LobbyInfo.Slots.Keys.ToArray();
@@ -475,6 +476,23 @@ namespace OpenRA.Mods.Common.Server
 						server.SyncLobbyGlobalSettings();
 						server.SendMessage(option.ValueChangedMessage(client.Name, split[1]));
 
+						return true;
+					}
+				},
+				{ "randommap",
+					s =>
+					{
+						if (!client.IsAdmin)
+						{
+							server.SendOrderTo(conn, "Message", "Only the host can set that option.");
+							return true;
+						}
+
+						// TODO: after #10857 reset map settings to mod defaults
+						bool.TryParse(s, out server.LobbyInfo.GlobalSettings.RandomMap);
+						server.SyncLobbyInfo();
+						server.SendMessage("{0} {1} Random Map."
+							.F(client.Name, server.LobbyInfo.GlobalSettings.RandomMap ? "enabled" : "disabled"));
 						return true;
 					}
 				},

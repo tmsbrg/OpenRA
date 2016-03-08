@@ -429,6 +429,15 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				}
 			}
 
+			var randomMap = optionsBin.GetOrNull<CheckboxWidget>("RANDOM_MAP_CHECKBOX");
+			if (randomMap != null)
+			{
+				randomMap.IsChecked = () => orderManager.LobbyInfo.GlobalSettings.RandomMap;
+				randomMap.IsDisabled = () => configurationDisabled() || !skirmishMode;
+				randomMap.OnClick = () => orderManager.IssueOrder(Order.Command(
+					"randommap {0}".F(!orderManager.LobbyInfo.GlobalSettings.RandomMap)));
+			}
+
 			var disconnectButton = lobby.Get<ButtonWidget>("DISCONNECT_BUTTON");
 			disconnectButton.OnClick = () => { Ui.CloseWindow(); onExit(); };
 

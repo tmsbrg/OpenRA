@@ -219,7 +219,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, World world)
 		{
 			var resources = world.WorldActor.TraitsImplementing<ResourceType>();
-			var resourceLayer = map.MapResources.Value;
+			var resourceLayer = map.Resources;
 			var rng = world.SharedRandom;
 
 			var mine = new ActorReference(mineInfo.Name);
