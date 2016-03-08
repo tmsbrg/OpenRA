@@ -188,6 +188,7 @@ namespace OpenRA.Network
 			public bool Creeps = true;
 			public bool Shroud = true;
 			public bool Fog = true;
+			public bool RandomMap = false;
 			public bool AllyBuildRadius = true;
 			public int StartingCash = 5000;
 			public string TechLevel;
