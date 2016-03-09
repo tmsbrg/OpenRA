@@ -347,55 +347,7 @@ namespace OpenRA.Mods.Common.Server
 								return;
 
 							server.LobbyInfo.GlobalSettings.RandomMap = false;
-							server.LobbyInfo.GlobalSettings.Map = map.Uid;
-
-							var oldSlots = server.LobbyInfo.Slots.Keys.ToArray();
-							server.Map = server.ModData.MapCache[server.LobbyInfo.GlobalSettings.Map];
-
-							server.LobbyInfo.Slots = server.Map.Players.Players
-								.Select(p => MakeSlotFromPlayerReference(p.Value))
-								.Where(ss => ss != null)
-								.ToDictionary(ss => ss.PlayerReference, ss => ss);
-
-							LoadMapSettings(server.LobbyInfo.GlobalSettings, server.Map.Rules);
-
-							// Reset client states
-							foreach (var c in server.LobbyInfo.Clients)
-								c.State = Session.ClientState.Invalid;
-
-							// Reassign players into new slots based on their old slots:
-							//  - Observers remain as observers
-							//  - Players who now lack a slot are made observers
-							//  - Bots who now lack a slot are dropped
-							//  - Bots who are not defined in the map rules are dropped
-							var botNames = server.Map.Rules.Actors["player"].TraitInfos<IBotInfo>().Select(t => t.Name);
-							var slots = server.LobbyInfo.Slots.Keys.ToArray();
-							var i = 0;
-							foreach (var os in oldSlots)
-							{
-								var c = server.LobbyInfo.ClientInSlot(os);
-								if (c == null)
-									continue;
-
-								c.SpawnPoint = 0;
-								c.Slot = i < slots.Length ? slots[i++] : null;
-								if (c.Slot != null)
-								{
-									// Remove Bot from slot if slot forbids bots
-									if (c.Bot != null && (!server.Map.Players.Players[c.Slot].AllowBots || !botNames.Contains(c.Bot)))
-										server.LobbyInfo.Clients.Remove(c);
-									S.SyncClientToPlayerReference(c, server.Map.Players.Players[c.Slot]);
-								}
-								else if (c.Bot != null)
-									server.LobbyInfo.Clients.Remove(c);
-							}
-
-							// Validate if color is allowed and get an alternative if it isn't
-							foreach (var c in server.LobbyInfo.Clients)
-								if (c.Slot == null || (c.Slot != null && !server.LobbyInfo.Slots[c.Slot].LockColor))
-									c.Color = c.PreferredColor = SanitizePlayerColor(server, c.Color, c.Index, conn);
-
-							server.SyncLobbyInfo();
+							ChangeMap(server, conn, map);
 
 							server.SendMessage("{0} changed the map to {1}.".F(client.Name, server.Map.Title));
 
@@ -407,7 +359,6 @@ namespace OpenRA.Mods.Common.Server
 							else if (server.Map.Players.Players.Where(p => p.Value.Playable).All(p => !p.Value.AllowBots))
 								server.SendMessage("Bots have been disabled on this map.");
 						};
-
 						Action queryFailed = () =>
 							server.SendOrderTo(conn, "Message", "Map was not found on server.");
 
@@ -508,6 +459,15 @@ namespace OpenRA.Mods.Common.Server
 
 						// TODO: after #10857 reset map settings to mod defaults
 						bool.TryParse(s, out server.LobbyInfo.GlobalSettings.RandomMap);
+
+						if (server.LobbyInfo.GlobalSettings.RandomMap)
+						{
+							// generate random map
+
+							var map = "5bea6c8d4522a4881f75af5171f341cf4197b25f";
+							ChangeMap(server, conn, server.ModData.MapCache[map]);
+						}
+
 						server.SyncLobbyInfo();
 						server.SendMessage("{0} {1} Random Map."
 							.F(client.Name, server.LobbyInfo.GlobalSettings.RandomMap ? "enabled" : "disabled"));
@@ -1081,6 +1041,67 @@ namespace OpenRA.Mods.Common.Server
 				LockSpawn = pr.LockSpawn,
 				Required = pr.Required,
 			};
+		}
+
+		static void ChangeMap(S server, Connection conn, MapPreview map)
+		{
+			server.LobbyInfo.GlobalSettings.Map = map.Uid;
+
+			var oldSlots = server.LobbyInfo.Slots.Keys.ToArray();
+			server.Map = server.ModData.MapCache[server.LobbyInfo.GlobalSettings.Map];
+
+			server.LobbyInfo.Slots = server.Map.Players.Players
+				.Select(p => MakeSlotFromPlayerReference(p.Value))
+				.Where(ss => ss != null)
+				.ToDictionary(ss => ss.PlayerReference, ss => ss);
+
+			LoadMapSettings(server.LobbyInfo.GlobalSettings, server.Map.Rules);
+
+			// Reset client states
+			foreach (var c in server.LobbyInfo.Clients)
+				c.State = Session.ClientState.Invalid;
+
+			// Reassign players into new slots based on their old slots:
+			//  - Observers remain as observers
+			//  - Players who now lack a slot are made observers
+			//  - Bots who now lack a slot are dropped
+			//  - Bots who are not defined in the map rules are dropped
+			var botNames = server.Map.Rules.Actors["player"].TraitInfos<IBotInfo>().Select(t => t.Name);
+			var slots = server.LobbyInfo.Slots.Keys.ToArray();
+			var i = 0;
+			foreach (var os in oldSlots)
+			{
+				var c = server.LobbyInfo.ClientInSlot(os);
+				if (c == null)
+					continue;
+
+				c.SpawnPoint = 0;
+				c.Slot = i < slots.Length ? slots[i++] : null;
+				if (c.Slot != null)
+				{
+					// Remove Bot from slot if slot forbids bots
+					if (c.Bot != null && (!server.Map.Players.Players[c.Slot].AllowBots || !botNames.Contains(c.Bot)))
+						server.LobbyInfo.Clients.Remove(c);
+					S.SyncClientToPlayerReference(c, server.Map.Players.Players[c.Slot]);
+				}
+				else if (c.Bot != null)
+					server.LobbyInfo.Clients.Remove(c);
+			}
+
+			// Validate if color is allowed and get an alternative if it isn't
+			foreach (var c in server.LobbyInfo.Clients)
+				if (c.Slot == null || (c.Slot != null && !server.LobbyInfo.Slots[c.Slot].LockColor))
+					c.Color = c.PreferredColor = SanitizePlayerColor(server, c.Color, c.Index, conn);
+
+			server.SyncLobbyInfo();
+
+			if (server.Map.Rules.Actors != server.ModData.DefaultRules.Actors)
+				server.SendMessage("This map contains custom rules. Game experience may change.");
+
+			if (server.Settings.DisableSinglePlayer)
+				server.SendMessage("Singleplayer games have been disabled on this server.");
+			else if (server.Map.Players.Players.Where(p => p.Value.Playable).All(p => !p.Value.AllowBots))
+				server.SendMessage("Bots have been disabled on this map.");
 		}
 
 		public static void LoadMapSettings(Session.Global gs, Ruleset rules)
