@@ -14,6 +14,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
+using OpenRA;
+using OpenRA.FileSystem;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Network;
@@ -346,7 +348,6 @@ namespace OpenRA.Mods.Common.Server
 							if (server.LobbyInfo.GlobalSettings.Map != lastMap)
 								return;
 
-							server.LobbyInfo.GlobalSettings.RandomMap = false;
 							ChangeMap(server, conn, map);
 
 							server.SendMessage("{0} changed the map to {1}.".F(client.Name, server.Map.Title));
@@ -457,18 +458,14 @@ namespace OpenRA.Mods.Common.Server
 							return true;
 						}
 
-						// TODO: after #10857 reset map settings to mod defaults
 						bool.TryParse(s, out server.LobbyInfo.GlobalSettings.RandomMap);
 
 						if (server.LobbyInfo.GlobalSettings.RandomMap)
 						{
-							// generate random map
-
-							var map = "5bea6c8d4522a4881f75af5171f341cf4197b25f";
-							ChangeMap(server, conn, server.ModData.MapCache[map]);
+							server.GenerateMap();
 						}
 
-						server.SyncLobbyInfo();
+						server.SyncLobbyGlobalSettings();
 						server.SendMessage("{0} {1} Random Map."
 							.F(client.Name, server.LobbyInfo.GlobalSettings.RandomMap ? "enabled" : "disabled"));
 						return true;
