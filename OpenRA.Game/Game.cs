@@ -142,10 +142,16 @@ namespace OpenRA
 		}
 
 		public static event Action LobbyInfoChanged = () => { };
+		public static event Action LobbyGenerateMap = () => { };
 
 		internal static void SyncLobbyInfo()
 		{
 			LobbyInfoChanged();
+		}
+
+		internal static void GenerateLobbyMap()
+		{
+			LobbyGenerateMap();
 		}
 
 		public static event Action BeforeGameStart = () => { };

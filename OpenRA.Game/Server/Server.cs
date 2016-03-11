@@ -600,6 +600,14 @@ namespace OpenRA.Server
 			catch { }
 		}
 
+		public void GenerateMap()
+		{
+			if (State != ServerState.WaitingPlayers)
+				return;
+
+			DispatchOrders(null, 0, new ServerOrder("GenerateMap", "").Serialize());
+		}
+
 		public void SyncLobbyInfo()
 		{
 			if (State == ServerState.WaitingPlayers) // Don't do this while the game is running, it breaks things!

@@ -20,6 +20,7 @@ using OpenRA.Mods.Common.Traits;
 using OpenRA.Network;
 using OpenRA.Traits;
 using OpenRA.Widgets;
+using OpenRA.FileSystem;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
@@ -119,6 +120,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			orderManager.AddChatLine += AddChatLine;
 			Game.LobbyInfoChanged += UpdateCurrentMap;
 			Game.LobbyInfoChanged += UpdatePlayerList;
+			Game.LobbyGenerateMap += GenerateMap;
 			Game.BeforeGameStart += OnGameStart;
 			Game.ConnectionStateChanged += ConnectionStateChanged;
 
@@ -169,6 +171,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						if (uid == Map.Uid)
 							return;
 
+						orderManager.IssueOrder(Order.Command("randommap false"));
 						orderManager.IssueOrder(Order.Command("map " + uid));
 						Game.Settings.Server.Map = uid;
 						Game.Settings.Save();
@@ -547,6 +550,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				Game.LobbyInfoChanged -= UpdateCurrentMap;
 				Game.LobbyInfoChanged -= UpdatePlayerList;
 				Game.BeforeGameStart -= OnGameStart;
+                Game.LobbyGenerateMap -= GenerateMap;
 				Game.ConnectionStateChanged -= ConnectionStateChanged;
 			}
 
@@ -824,6 +828,37 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				players.RemoveChild(players.Children[idx]);
 
 			tabCompletion.Names = orderManager.LobbyInfo.Clients.Select(c => c.Name).Distinct().ToList();
+		}
+
+		void GenerateMap()
+		{
+			var world = shellmapWorld;
+			var worldActor = Game.ModData.DefaultRules.Actors["world"];
+
+			var mapGenerator = new MapGenerator(worldActor, world.SharedRandom);
+			var map = mapGenerator.GenerateRandom(90, 90, Game.ModData.DefaultTileSets[Map.TileSet]);
+
+			// TODO: map saving should be in MapGenerator
+			map.Title = "Random Map";
+			map.Author = "Random map generator";
+			map.Visibility = MapVisibility.Lobby;
+			map.RequiresMod = Game.ModData.Manifest.Id;
+
+			// TODO: test directory for write-access, and if there even is a directory, see SaveMapLogic.cs
+			// TODO: also this places the map file in OpenRA's directory. Preferably we'd put it in ~/.openra
+			var kv = Game.ModData.MapCache.MapLocations.First();
+			var folder = kv.Key as IReadWritePackage;
+			var classification = kv.Value;
+			var path = Platform.ResolvePath(folder.Name + "__random__.oramap");
+
+			// TODO: test that it actually saves correctly
+			folder.Delete(path);
+			var package = ZipFile.Create(path, folder);
+			map.Save(package);
+
+			Game.ModData.MapCache[map.Uid].UpdateFromMap(map.Package, folder, classification, null, map.Grid.Type);
+
+			orderManager.IssueOrder(Order.Command("map " + map.Uid));
 		}
 
 		void OnGameStart()

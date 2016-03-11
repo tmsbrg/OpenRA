@@ -21,11 +21,13 @@ namespace OpenRA.Mods.Common
 {
 	public class MapGenerator
 	{
-		World world;
+		ActorInfo world;
+		MersenneTwister rng;
 
-		public MapGenerator(World world)
+		public MapGenerator(ActorInfo world, MersenneTwister rng)
 		{
 			this.world = world;
+			this.rng = rng;
 		}
 
 		public Map GenerateEmpty(int width, int height, TileSet tileset)
@@ -35,7 +37,8 @@ namespace OpenRA.Mods.Common
 			width = Math.Max(2, width);
 			height = Math.Max(2, height);
 
-			var maxTerrainHeight = world.Map.Grid.MaximumTerrainHeight;
+			var maxTerrainHeight = Game.ModData.Manifest.Get<MapGrid>().MaximumTerrainHeight;
+
 			var map = new Map(Game.ModData, tileset, width + 2, height + maxTerrainHeight + 2);
 
 			var tl = new PPos(1, 1);
@@ -61,7 +64,7 @@ namespace OpenRA.Mods.Common
 
 		int mineDistance = 10;
 
-		CVec GetRandomVecWithDistance(float distance, MersenneTwister rng)
+		CVec GetRandomVecWithDistance(float distance)
 		{
 			var angle = rng.NextFloat() * Math.PI * 2;
 			var x = distance * (float)Math.Cos(angle);
@@ -69,12 +72,12 @@ namespace OpenRA.Mods.Common
 			return new CVec((int)x, (int)y);
 		}
 
-		MPos GetMineLocation(MPos spawnLocation, MersenneTwister rng, Map map)
+		MPos GetMineLocation(MPos spawnLocation, Map map)
 		{
 			var spawnLocationCell = spawnLocation.ToCPos(map);
 
 			// assumes this location is valid(inside map and not intersecting with enemy)
-			return (spawnLocationCell + GetRandomVecWithDistance((float)mineDistance, rng)).ToMPos(map);
+			return (spawnLocationCell + GetRandomVecWithDistance((float)mineDistance)).ToMPos(map);
 		}
 
 		int actorNum = 0;
@@ -95,12 +98,12 @@ namespace OpenRA.Mods.Common
 			return true;
 		}
 
-		MPos RandomLocation(Rectangle bounds, MersenneTwister rng)
+		MPos RandomLocation(Rectangle bounds)
 		{
 			return new MPos(rng.Next(bounds.Left, bounds.Right), rng.Next(bounds.Top, bounds.Bottom));
 		}
 
-		List<MPos> TryGetSpawnLocations(int playerNum, int playerLandSize, Map map, MersenneTwister rng, Rectangle bounds)
+		List<MPos> TryGetSpawnLocations(int playerNum, int playerLandSize, Map map, Rectangle bounds)
 		{
 			var spawnLocations = new List<MPos>();
 			for (var i = 0; i < playerNum; i++)
@@ -110,7 +113,7 @@ namespace OpenRA.Mods.Common
 				for (var t = 0; t < tries; t++)
 				{
 					success = false;
-					var pos = RandomLocation(bounds, rng);
+					var pos = RandomLocation(bounds);
 					if (CanPlaceActor(pos, playerLandSize * 2, spawnLocations, map))
 					{
 						spawnLocations.Add(pos);
@@ -123,7 +126,7 @@ namespace OpenRA.Mods.Common
 			return spawnLocations;
 		}
 
-		List<MPos> TryGetMineLocations(MPos location, int mineNum, int minDistance, MersenneTwister rng, Map map)
+		List<MPos> TryGetMineLocations(MPos location, int mineNum, int minDistance, Map map)
 		{
 			var mineLocations = new List<MPos>();
 			for (var i = 0; i < mineNum; i++)
@@ -133,7 +136,7 @@ namespace OpenRA.Mods.Common
 				for (var t = 0; t < tries; t++)
 				{
 					success = false;
-					var pos = GetMineLocation(location, rng, map);
+					var pos = GetMineLocation(location, map);
 					if (CanPlaceActor(pos, minDistance, mineLocations, map))
 					{
 						mineLocations.Add(pos);
@@ -147,7 +150,7 @@ namespace OpenRA.Mods.Common
 		}
 
 		List <MPos> TryGetExtraResourceLocations(int mineNum, int minDistance, List<MPos> spawnLocations,
-				int playerDistance, MersenneTwister rng, Rectangle bounds, Map map)
+				int playerDistance, Rectangle bounds, Map map)
 		{
 			var mineLocations = new List<MPos>();
 			for (var i = 0; i < mineNum; i++)
@@ -157,7 +160,7 @@ namespace OpenRA.Mods.Common
 				for (var t = 0; t < tries; t++)
 				{
 					success = false;
-					var pos = RandomLocation(bounds, rng);
+					var pos = RandomLocation(bounds);
 					if (CanPlaceActor(pos, playerDistance, spawnLocations, map) &&
 						CanPlaceActor(pos, minDistance, mineLocations, map))
 					{
@@ -172,11 +175,10 @@ namespace OpenRA.Mods.Common
 		}
 
 
-		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, World world)
+		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world)
 		{
-			var resources = world.WorldActor.TraitsImplementing<ResourceType>();
+			var resources = world.TraitInfos<ResourceTypeInfo>();
 			var resourceLayer = map.Resources;
-			var rng = world.SharedRandom;
 
 			var mine = new ActorReference(mineInfo.Name);
 			mine.Add(new OwnerInit("Neutral"));
@@ -187,8 +189,7 @@ namespace OpenRA.Mods.Common
 
 			// add resources around mine
 			var resourceName = mineInfo.TraitInfo<SeedsResourceInfo>().ResourceType;
-			var resourceType = resources.Where(t => t.Info.Name == resourceName)
-				.Select(t => t.Info).FirstOrDefault();
+			var resourceType = resources.Where(t => t.Name == resourceName).FirstOrDefault();
 
 			var type = (byte)resourceType.ResourceType;
 			var index = (byte)resourceType.MaxDensity;
@@ -219,11 +220,10 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
-		void GenerateRandomMap(Map map, MapPlayers mapPlayers, World world)
+		void GenerateRandomMap(Map map, MapPlayers mapPlayers, ActorInfo world)
 		{
 			var players = mapPlayers.Players;
 			var actors = map.Rules.Actors;
-			var rng = world.SharedRandom;
 			var mineTypes = actors.Values.Where(a => a.TraitInfoOrDefault<SeedsResourceInfo>() != null && !a.Name.StartsWith("^"));
 
 			if (!actors.ContainsKey("mpspawn")) return;
@@ -263,7 +263,7 @@ namespace OpenRA.Mods.Common
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
 			{
-				spawnLocations = TryGetSpawnLocations(playerNum, playerLandSize, map, rng, bounds);
+				spawnLocations = TryGetSpawnLocations(playerNum, playerLandSize, map, bounds);
 				if (spawnLocations.Count() == playerNum)
 				{
 					break;
@@ -291,7 +291,7 @@ namespace OpenRA.Mods.Common
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
-				var mineLocations = TryGetMineLocations(location, startingMineNum, startingMineMinDistance, rng, map);
+				var mineLocations = TryGetMineLocations(location, startingMineNum, startingMineMinDistance, map);
 
 				// add mines around spawn points
 				foreach (var mineLocation in mineLocations)
@@ -301,7 +301,7 @@ namespace OpenRA.Mods.Common
 			}
 
 			var extraResourceLocations = TryGetExtraResourceLocations(extraMineNum, extraMineDistance,
-					spawnLocations, playerLandSize, rng, bounds, map);
+					spawnLocations, playerLandSize, bounds, map);
 
 			foreach (var location in extraResourceLocations)
 			{
