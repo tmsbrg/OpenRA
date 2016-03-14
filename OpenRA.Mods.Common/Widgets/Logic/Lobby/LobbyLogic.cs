@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -1015,7 +1016,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var kv = Game.ModData.MapCache.MapLocations.First();
 			var folder = kv.Key as IReadWritePackage;
 			var classification = kv.Value;
-			var path = Platform.ResolvePath(folder.Name + "__random__.oramap");
+			var path = Platform.ResolvePath(Path.Combine(folder.Name, "__random__.oramap"));
 
 			// TODO: test that it actually saves correctly
 			folder.Delete(path);
