@@ -199,6 +199,9 @@ namespace OpenRA
 		readonly Dictionary<string, byte> terrainIndexByType = new Dictionary<string, byte>();
 		readonly byte defaultWalkableTerrainIndex;
 
+		[FieldLoader.Ignore]
+		public readonly GeneratorInfo Generator;
+
 		// Private default ctor for serialization comparison
 		TileSet() { }
 
@@ -233,6 +236,11 @@ namespace OpenRA
 			// Templates
 			Templates = yaml["Templates"].ToDictionary().Values
 				.Select(y => new TerrainTemplateInfo(this, y)).ToDictionary(t => t.Id).AsReadOnly();
+
+			if (yaml.ContainsKey("Generator"))
+			{
+				Generator = new GeneratorInfo(yaml["Generator"]);
+			}
 		}
 
 		public TileSet(string name, string id, string palette, TerrainTypeInfo[] terrainInfo)
