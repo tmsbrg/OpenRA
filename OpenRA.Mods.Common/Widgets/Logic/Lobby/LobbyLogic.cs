@@ -1002,8 +1002,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var world = shellmapWorld;
 			var worldActor = Game.ModData.DefaultRules.Actors["world"];
 
-			var mapGenerator = new MapGenerator(worldActor, world.SharedRandom);
-			var map = mapGenerator.GenerateRandom(90, 90, Game.ModData.DefaultTileSets[Map.TileSet]);
+			var mapGenerator = new MapGenerator(worldActor, world.SharedRandom, Game.ModData.DefaultTileSets[Map.TileSet]);
+			var map = mapGenerator.GenerateRandom(90, 90);
 
 			// TODO: map saving should be in MapGenerator
 			map.Title = "Random Map";
