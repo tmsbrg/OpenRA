@@ -216,7 +216,6 @@ namespace OpenRA.Mods.Common
 			if (bounds.Left >= bounds.Right || bounds.Top >= bounds.Bottom) return;
 
 			var spawnLocations = new List<MPos>();
-			var bestSpawnLocationsNum = 0;
 			var bestSpawnLocations = new List<MPos>();
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
@@ -226,17 +225,15 @@ namespace OpenRA.Mods.Common
 				{
 					break;
 				}
-				else if (spawnLocations.Count() > bestSpawnLocationsNum)
+				else if (spawnLocations.Count() > bestSpawnLocations.Count())
 				{
 					bestSpawnLocations = spawnLocations;
-					bestSpawnLocationsNum = spawnLocations.Count();
 				}
 			}
 			if (spawnLocations.Count() != playerNum)
 			{
 				spawnLocations = bestSpawnLocations;
 				Console.WriteLine("MapGenerator: Couldn't place all players(placed "+spawnLocations.Count()+" instead of "+playerNum+")");
-				playerNum = bestSpawnLocationsNum;
 			}
 
 			foreach (var location in spawnLocations)
@@ -268,7 +265,7 @@ namespace OpenRA.Mods.Common
 			}
 
 			var creepEnemies = new List<string>();
-			for (var i = 0; i < playerNum; i++)
+			for (var i = 0; i < spawnLocations.Count(); i++)
 			{
 				var name = "Multi"+i;
 				var player = new PlayerReference
