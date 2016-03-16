@@ -52,9 +52,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				var worldActor = world.WorldActor.Info;
 				var tileset = modData.DefaultTileSets[tilesetDropDown.Text];
 
-				var mapGenerator = new MapGenerator(worldActor, world.SharedRandom);
+				var mapGenerator = new MapGenerator(worldActor, world.SharedRandom, tileset);
 
-				var map = mapGenerator.GenerateRandom(width, height, tileset);
+				var map = mapGenerator.GenerateRandom(width, height);
 
 				Action<string> afterSave = uid =>
 				{

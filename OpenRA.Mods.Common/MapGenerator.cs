@@ -23,14 +23,16 @@ namespace OpenRA.Mods.Common
 	{
 		ActorInfo world;
 		MersenneTwister rng;
+		TileSet tileset;
 
-		public MapGenerator(ActorInfo world, MersenneTwister rng)
+		public MapGenerator(ActorInfo world, MersenneTwister rng, TileSet tileset)
 		{
 			this.world = world;
 			this.rng = rng;
+			this.tileset = tileset;
 		}
 
-		public Map GenerateEmpty(int width, int height, TileSet tileset)
+		public Map GenerateEmpty(int width, int height)
 		{
 			// Require at least a 2x2 playable area so that the
 			// ground is visible through the edge shroud
@@ -51,9 +53,9 @@ namespace OpenRA.Mods.Common
 			return map;
 		}
 
-		public Map GenerateRandom(int width, int height, TileSet tileset)
+		public Map GenerateRandom(int width, int height)
 		{
-			var map = GenerateEmpty(width, height, tileset);
+			var map = GenerateEmpty(width, height);
 			var mapPlayers = new MapPlayers(map.Rules, 0);
 
 			GenerateRandomMap(map, mapPlayers, world);
@@ -103,77 +105,33 @@ namespace OpenRA.Mods.Common
 			return new MPos(rng.Next(bounds.Left, bounds.Right), rng.Next(bounds.Top, bounds.Bottom));
 		}
 
-		List<MPos> TryGetSpawnLocations(int playerNum, int playerLandSize, Map map, Rectangle bounds)
+		List<MPos> TryGetLocations(int num, int minDistance, Map map, Func<MPos> getPos)
 		{
-			var spawnLocations = new List<MPos>();
-			for (var i = 0; i < playerNum; i++)
+			return TryGetLocations(num, getPos, (pos, locations) => CanPlaceActor(pos, minDistance, locations, map));
+		}
+
+		List<MPos> TryGetLocations(int num, Func<MPos> getPos, Func<MPos, List<MPos>, bool> checkPos)
+		{
+			var locations = new List<MPos>();
+			for (var i = 0; i < num; i++)
 			{
 				var tries = 10;
 				var success = false;
 				for (var t = 0; t < tries; t++)
 				{
 					success = false;
-					var pos = RandomLocation(bounds);
-					if (CanPlaceActor(pos, playerLandSize * 2, spawnLocations, map))
+					var pos = getPos();
+					if (checkPos(pos, locations))
 					{
-						spawnLocations.Add(pos);
+						locations.Add(pos);
 						success = true;
 						break;
 					}
 				}
 				if (!success) break;
 			}
-			return spawnLocations;
+			return locations;
 		}
-
-		List<MPos> TryGetMineLocations(MPos location, int mineNum, int minDistance, Map map)
-		{
-			var mineLocations = new List<MPos>();
-			for (var i = 0; i < mineNum; i++)
-			{
-				var tries = 10;
-				var success = false;
-				for (var t = 0; t < tries; t++)
-				{
-					success = false;
-					var pos = GetMineLocation(location, map);
-					if (CanPlaceActor(pos, minDistance, mineLocations, map))
-					{
-						mineLocations.Add(pos);
-						success = true;
-						break;
-					}
-				}
-				if (!success) break;
-			}
-			return mineLocations;
-		}
-
-		List <MPos> TryGetExtraResourceLocations(int mineNum, int minDistance, List<MPos> spawnLocations,
-				int playerDistance, Rectangle bounds, Map map)
-		{
-			var mineLocations = new List<MPos>();
-			for (var i = 0; i < mineNum; i++)
-			{
-				var tries = 10;
-				var success = false;
-				for (var t = 0; t < tries; t++)
-				{
-					success = false;
-					var pos = RandomLocation(bounds);
-					if (CanPlaceActor(pos, playerDistance, spawnLocations, map) &&
-						CanPlaceActor(pos, minDistance, mineLocations, map))
-					{
-						mineLocations.Add(pos);
-						success = true;
-						break;
-					}
-				}
-				if (!success) break;
-			}
-			return mineLocations;
-		}
-
 
 		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world)
 		{
@@ -243,7 +201,7 @@ namespace OpenRA.Mods.Common
 
 			var startingResourceSize = 32;
 			var startingMineNum = 2;
-			var startingMineMinDistance = 4;
+			var startingMineInterDistance = 4;
 
 			var extraResourceSize = 42;
 			var extraMineNum = 10;
@@ -263,7 +221,7 @@ namespace OpenRA.Mods.Common
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
 			{
-				spawnLocations = TryGetSpawnLocations(playerNum, playerLandSize, map, bounds);
+				spawnLocations = TryGetLocations(playerNum, playerLandSize * 2, map, () => RandomLocation(bounds));
 				if (spawnLocations.Count() == playerNum)
 				{
 					break;
@@ -277,8 +235,8 @@ namespace OpenRA.Mods.Common
 			if (spawnLocations.Count() != playerNum)
 			{
 				spawnLocations = bestSpawnLocations;
-				playerNum = bestSpawnLocationsNum;
 				Console.WriteLine("MapGenerator: Couldn't place all players(placed "+spawnLocations.Count()+" instead of "+playerNum+")");
+				playerNum = bestSpawnLocationsNum;
 			}
 
 			foreach (var location in spawnLocations)
@@ -291,7 +249,7 @@ namespace OpenRA.Mods.Common
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
-				var mineLocations = TryGetMineLocations(location, startingMineNum, startingMineMinDistance, map);
+				var mineLocations = TryGetLocations(startingMineNum, startingMineInterDistance, map, () => GetMineLocation(location, map));
 
 				// add mines around spawn points
 				foreach (var mineLocation in mineLocations)
@@ -300,8 +258,9 @@ namespace OpenRA.Mods.Common
 				}
 			}
 
-			var extraResourceLocations = TryGetExtraResourceLocations(extraMineNum, extraMineDistance,
-					spawnLocations, playerLandSize, bounds, map);
+			var extraResourceLocations = TryGetLocations(extraMineNum, () => RandomLocation(bounds),
+					(p, locs) => CanPlaceActor(p, extraMineDistance, locs, map) &&
+					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
 
 			foreach (var location in extraResourceLocations)
 			{
