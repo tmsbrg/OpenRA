@@ -178,6 +178,45 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
+		void PlaceDebris(MPos location, int size, Map map)
+		{
+			if (tileset.Generator == null || tileset.Generator.Debris == null
+					|| tileset.Generator.Debris.LandDebris == null) return;
+
+			var debris = tileset.Generator.Debris.LandDebris;
+			var index = debris[rng.Next(0, debris.Count())];
+			var template = tileset.Templates[index];
+
+			PlaceTile(location, template, map);
+		}
+
+		void PlaceTile(MPos location, TerrainTemplateInfo template, Map map)
+		{
+			var cell = location.ToCPos(map);
+			var mapTiles = map.MapTiles.Value;
+			var mapHeight = map.MapHeight.Value;
+
+			var baseHeight = mapHeight.Contains(cell) ? mapHeight[cell] : (byte)0;
+
+			var i = 0;
+			for (var y = 0; y < template.Size.Y; y++)
+			{
+				for (var x = 0; x < template.Size.X; x++, i++)
+				{
+					if (template.Contains(i) && template[i] != null)
+					{
+						var index = template.PickAny ? (byte)Game.CosmeticRandom.Next(0, template.TilesCount) : (byte)i;
+						var c = cell + new CVec(x, y);
+						if (!mapTiles.Contains(c))
+							continue;
+
+						mapTiles[c] = new TerrainTile(template.Id, index);
+						mapHeight[c] = (byte)(baseHeight + template[index].Height).Clamp(0, map.Grid.MaximumTerrainHeight);
+					}
+				}
+			}
+		}
+
 		void GenerateRandomMap(Map map, MapPlayers mapPlayers, ActorInfo world)
 		{
 			var players = mapPlayers.Players;
@@ -206,6 +245,10 @@ namespace OpenRA.Mods.Common
 			var extraResourceSize = 42;
 			var extraMineNum = 10;
 			var extraMineDistance = 10;
+
+			var debrisSize = 42;
+			var debrisNum = 10;
+			var debrisDistance = 10;
 
 			var bounds = Rectangle.FromLTRB(
 					map.Bounds.Left + playerLandSize,
@@ -255,9 +298,19 @@ namespace OpenRA.Mods.Common
 				}
 			}
 
+			var debrisLocations = TryGetLocations(debrisNum, () => RandomLocation(bounds),
+					(p, locs) => CanPlaceActor(p, debrisDistance, locs, map) &&
+					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
+
+			foreach (var location in debrisLocations)
+			{
+				PlaceDebris(location, debrisSize, map);
+			}
+
 			var extraResourceLocations = TryGetLocations(extraMineNum, () => RandomLocation(bounds),
 					(p, locs) => CanPlaceActor(p, extraMineDistance, locs, map) &&
-					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
+					 CanPlaceActor(p, playerLandSize, spawnLocations, map) &&
+					 CanPlaceActor(p, debrisSize, debrisLocations, map));
 
 			foreach (var location in extraResourceLocations)
 			{
