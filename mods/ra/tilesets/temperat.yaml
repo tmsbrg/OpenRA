@@ -7,7 +7,7 @@ General:
 
 Generator:
     Debris:
-        LandDebris: 96, 216, 217, 218, 219, 220, 221, 222
+        LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
         WaterDebris: 57, 500, 505
 
 Terrain:
