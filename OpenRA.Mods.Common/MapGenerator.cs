@@ -197,8 +197,8 @@ namespace OpenRA.Mods.Common
 
 		void PlaceTile(CPos cell, TerrainTemplateInfo template, Map map)
 		{
-			var mapTiles = map.MapTiles.Value;
-			var mapHeight = map.MapHeight.Value;
+			var mapTiles = map.Tiles;
+			var mapHeight = map.Height;
 
 			var baseHeight = mapHeight.Contains(cell) ? mapHeight[cell] : (byte)0;
 
