@@ -27,12 +27,6 @@ Background@LOBBY_OPTIONS_BIN:
 					Height: 20
 					Font: Regular
 					Text: Fog of War
-				Checkbox@RANDOM_MAP_CHECKBOX:
-					Y: 70
-					Width: 150
-					Height: 20
-					Font: Regular
-					Text: Random Map
 				Checkbox@CRATES_CHECKBOX:
 					X: 170
 					Width: 225

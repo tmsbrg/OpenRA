@@ -106,6 +106,7 @@ ChromeLayout:
 	ra|chrome/lobby-globalchat.yaml
 	ra|chrome/color-picker.yaml
 	ra|chrome/map-chooser.yaml
+	ra|chrome/map-generator.yaml
 	ra|chrome/multiplayer.yaml
 	ra|chrome/multiplayer-browser.yaml
 	ra|chrome/multiplayer-createserver.yaml
