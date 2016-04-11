@@ -1,0 +1,30 @@
+Background@MAPGENERATOR_PANEL:
+	X: (WINDOW_RIGHT - WIDTH)/2
+	Y: (WINDOW_BOTTOM - HEIGHT)/2
+	Logic: MapGeneratorLogic
+	Width: 808
+	Height: 600
+	Children:
+		Label@MAPGENERATOR_TITLE:
+			Y: 15
+			Align: Center
+			Width: PARENT_RIGHT
+			Height: 20
+			Text: Map Generator
+			Font: Bold
+		Button@BUTTON_GENERATE:
+			X: PARENT_RIGHT - 270
+			Y: PARENT_BOTTOM - 45
+			Width: 120
+			Height: 25
+			Text: Generate
+			Font: Bold
+			Key: return
+		Button@BUTTON_CANCEL:
+			X: PARENT_RIGHT - 140
+			Y: PARENT_BOTTOM - 45
+			Width: 120
+			Height: 25
+			Text: Cancel
+			Font: Bold
+			Key: escape
