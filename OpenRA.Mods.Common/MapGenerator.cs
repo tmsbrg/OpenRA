@@ -19,11 +19,31 @@ using OpenRA.Mods.Common.Traits;
 
 namespace OpenRA.Mods.Common
 {
+	public class MapGeneratorSettings
+	{
+		public int playerNum = 5;
+		public int playerMinDistance = 4;
+
+		public int startingMineDistance = 10;
+		public int startingMineNum = 2;
+		public int startingMineSize = 32;
+		public int startingMineInterDistance = 4;
+
+		public int extraMineSize = 42;
+		public int extraMineNum = 10;
+		public int extraMineDistance = 10;
+
+		public int debrisNumGroups = 20;
+		public int debrisNumPerGroup = 7;
+		public int debrisGroupSize = 6;
+	}
+
 	public class MapGenerator
 	{
 		ActorInfo world;
 		MersenneTwister rng;
 		TileSet tileset;
+		MapGeneratorSettings settings = new MapGeneratorSettings();
 
 		public MapGenerator(ActorInfo world, MersenneTwister rng, TileSet tileset)
 		{
@@ -238,21 +258,7 @@ namespace OpenRA.Mods.Common
 			var mpspawn = actors["mpspawn"];
 			var mineInfo = mineTypes.First();
 
-			var playerMinDistance = 4;
-			var playerLandSize = mineDistance + playerMinDistance;
-			var playerNum = 5;
-
-			var startingResourceSize = 32;
-			var startingMineNum = 2;
-			var startingMineInterDistance = 4;
-
-			var extraResourceSize = 42;
-			var extraMineNum = 10;
-			var extraMineDistance = 10;
-
-			var debrisNumGroups = 20;
-			var debrisNumPerGroup = 7;
-			var debrisGroupSize = 6;
+			var playerLandSize = mineDistance + settings.playerMinDistance;
 
 			var bounds = Rectangle.FromLTRB(
 					map.Bounds.Left + playerLandSize,
@@ -267,8 +273,8 @@ namespace OpenRA.Mods.Common
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
 			{
-				spawnLocations = TryGetLocations(playerNum, playerLandSize * 2, map, () => RandomLocation(bounds));
-				if (spawnLocations.Count() == playerNum)
+				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(bounds));
+				if (spawnLocations.Count() == settings.playerNum)
 				{
 					break;
 				}
@@ -277,10 +283,10 @@ namespace OpenRA.Mods.Common
 					bestSpawnLocations = spawnLocations;
 				}
 			}
-			if (spawnLocations.Count() != playerNum)
+			if (spawnLocations.Count() != settings.playerNum)
 			{
 				spawnLocations = bestSpawnLocations;
-				Console.WriteLine("MapGenerator: Couldn't place all players(placed "+spawnLocations.Count()+" instead of "+playerNum+")");
+				Console.WriteLine("MapGenerator: Couldn't place all players(placed "+spawnLocations.Count()+" instead of "+settings.playerNum+")");
 			}
 
 			foreach (var location in spawnLocations)
@@ -293,31 +299,31 @@ namespace OpenRA.Mods.Common
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
-				var mineLocations = TryGetLocations(startingMineNum, startingMineInterDistance, map, () => GetMineLocation(location, map));
+				var mineLocations = TryGetLocations(settings.startingMineNum, settings.startingMineInterDistance, map, () => GetMineLocation(location, map));
 
 				// add mines around spawn points
 				foreach (var mineLocation in mineLocations)
 				{
-					PlaceResourceMine(mineLocation, startingResourceSize, mineInfo, map, world);
+					PlaceResourceMine(mineLocation, settings.startingMineSize, mineInfo, map, world);
 				}
 			}
 
-			var debrisLocations = TryGetLocations(debrisNumGroups, () => RandomLocation(bounds),
-					(p, locs) => CanPlaceActor(p, debrisGroupSize, locs, map) &&
+			var debrisLocations = TryGetLocations(settings.debrisNumGroups, () => RandomLocation(bounds),
+					(p, locs) => CanPlaceActor(p, settings.debrisGroupSize, locs, map) &&
 					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
 
 			foreach (var location in debrisLocations)
 			{
-				PlaceDebris(location, debrisGroupSize, debrisNumPerGroup, map);
+				PlaceDebris(location, settings.debrisGroupSize, settings.debrisNumPerGroup, map);
 			}
 
-			var extraResourceLocations = TryGetLocations(extraMineNum, () => RandomLocation(bounds),
-					(p, locs) => CanPlaceActor(p, extraMineDistance, locs, map) &&
+			var extraResourceLocations = TryGetLocations(settings.extraMineNum, () => RandomLocation(bounds),
+					(p, locs) => CanPlaceActor(p, settings.extraMineDistance, locs, map) &&
 					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
 
 			foreach (var location in extraResourceLocations)
 			{
-				PlaceResourceMine(location, extraResourceSize, mineInfo, map, world);
+				PlaceResourceMine(location, settings.extraMineSize, mineInfo, map, world);
 			}
 
 			var creepEnemies = new List<string>();

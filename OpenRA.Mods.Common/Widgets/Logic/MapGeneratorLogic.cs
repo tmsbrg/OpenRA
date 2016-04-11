@@ -18,6 +18,7 @@ using OpenRA.FileSystem;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
+	// TODO: sync map generator settings
 	public class MapGeneratorLogic : ChromeLogic
 	{
 		[ObjectCreator.UseCtor]
