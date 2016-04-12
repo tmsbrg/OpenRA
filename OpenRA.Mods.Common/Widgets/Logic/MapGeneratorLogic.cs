@@ -21,23 +21,63 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 	// TODO: sync map generator settings
 	public class MapGeneratorLogic : ChromeLogic
 	{
+		Widget widget;
+		MapGeneratorSettings settings = new MapGeneratorSettings();
+		MapGenerator mapGenerator;
+
 		[ObjectCreator.UseCtor]
 		internal MapGeneratorLogic(Widget widget, ModData modData, Action onExit, Action<string> onSelect, World world, TileSet tileset)
 		{
+			this.widget = widget;
+			var worldActor = Game.ModData.DefaultRules.Actors["world"];
+			mapGenerator = new MapGenerator(worldActor, world.SharedRandom, tileset);
+			mapGenerator.settings = settings;
+
+			BindSetting("PLAYER_NUM", (x) => { settings.playerNum = x; }, () => { return settings.playerNum; });
+
 			widget.Get<ButtonWidget>("BUTTON_CANCEL").OnClick = () => { Ui.CloseWindow(); onExit(); };
 			widget.Get<ButtonWidget>("BUTTON_GENERATE").OnClick = () =>
 			{
-				var uid = GenerateMap(world, tileset);
+				var uid = GenerateMap();
 				Ui.CloseWindow();
 				onSelect(uid);
 			};
 		}
 
-		string GenerateMap(World world, TileSet tileset)
+		void BindSetting(string name, Action<int> setValue, Func<int> getValue)
 		{
-			var worldActor = Game.ModData.DefaultRules.Actors["world"];
+			var slider = widget.GetOrNull<SliderWidget>(name+"_SLIDER");
+			var field = widget.GetOrNull<TextFieldWidget>(name+"_FIELD");
+			if (slider == null || field == null) return;
 
-			var mapGenerator = new MapGenerator(worldActor, world.SharedRandom, tileset);
+			slider.OnChange += x =>
+			{
+				var v = (int)Math.Round(x);
+				setValue(v);
+				field.Text = v.ToString();
+			};
+			slider.GetValue = () => getValue();
+
+			field.IsValid = () =>
+			{
+				int n;
+				if (!int.TryParse(field.Text, out n)) return false;
+				return n >= slider.MinimumValue && n <= slider.MaximumValue;
+			};
+			field.OnTextEdited = () =>
+			{
+				if (!field.IsValid()) return;
+				setValue(int.Parse(field.Text));
+			};
+			field.OnLoseFocus = () =>
+			{
+				if (field.IsValid()) return;
+				field.Text = getValue().ToString();
+			};
+		}
+
+		string GenerateMap()
+		{
 			var map = mapGenerator.GenerateRandom(90, 90);
 
 			// TODO: map saving should be in MapGenerator
