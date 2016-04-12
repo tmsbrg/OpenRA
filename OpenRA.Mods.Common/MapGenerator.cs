@@ -24,14 +24,14 @@ namespace OpenRA.Mods.Common
 		public int playerNum = 5;
 		public int playerMinDistance = 4;
 
-		public int startingMineDistance = 10;
 		public int startingMineNum = 2;
+		public int startingMineDistance = 10;
 		public int startingMineSize = 32;
 		public int startingMineInterDistance = 4;
 
-		public int extraMineSize = 42;
 		public int extraMineNum = 10;
 		public int extraMineDistance = 10;
+		public int extraMineSize = 42;
 
 		public int debrisNumGroups = 20;
 		public int debrisNumPerGroup = 7;
@@ -43,7 +43,7 @@ namespace OpenRA.Mods.Common
 		ActorInfo world;
 		MersenneTwister rng;
 		TileSet tileset;
-		MapGeneratorSettings settings = new MapGeneratorSettings();
+		public MapGeneratorSettings settings = new MapGeneratorSettings();
 
 		public MapGenerator(ActorInfo world, MersenneTwister rng, TileSet tileset)
 		{
