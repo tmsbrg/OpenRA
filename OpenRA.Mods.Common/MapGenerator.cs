@@ -93,8 +93,6 @@ namespace OpenRA.Mods.Common
 			return Game.ModData.DefaultTileSets[settings.tileset];
 		}
 
-		int mineDistance = 10;
-
 		CVec GetRandomVecWithDistance(float distance)
 		{
 			var angle = rng.NextFloat() * Math.PI * 2;
@@ -108,7 +106,7 @@ namespace OpenRA.Mods.Common
 			var spawnLocationCell = spawnLocation.ToCPos(map);
 
 			// assumes this location is valid(inside map and not intersecting with enemy)
-			return (spawnLocationCell + GetRandomVecWithDistance((float)mineDistance)).ToMPos(map);
+			return (spawnLocationCell + GetRandomVecWithDistance((float)settings.startingMineDistance)).ToMPos(map);
 		}
 
 		int actorNum = 0;
@@ -268,22 +266,21 @@ namespace OpenRA.Mods.Common
 			var mpspawn = actors["mpspawn"];
 			var mineInfo = mineTypes.First();
 
-			var playerLandSize = mineDistance + settings.playerMinDistance;
+			var playerLandSize = settings.startingMineDistance + settings.playerMinDistance;
 
-			var bounds = Rectangle.FromLTRB(
-					map.Bounds.Left + playerLandSize,
-					map.Bounds.Top + playerLandSize,
-					map.Bounds.Right - playerLandSize,
-					map.Bounds.Bottom - playerLandSize);
-
-			if (bounds.Left >= bounds.Right || bounds.Top >= bounds.Bottom) return;
+			var bounds = map.Bounds;
+			var playerBounds = Rectangle.FromLTRB(
+					bounds.Left + playerLandSize,
+					bounds.Top + playerLandSize,
+					bounds.Right - playerLandSize,
+					bounds.Bottom - playerLandSize);
 
 			var spawnLocations = new List<MPos>();
 			var bestSpawnLocations = new List<MPos>();
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
 			{
-				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(bounds));
+				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(playerBounds));
 				if (spawnLocations.Count() == settings.playerNum)
 				{
 					break;
