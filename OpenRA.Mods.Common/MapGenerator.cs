@@ -21,8 +21,12 @@ namespace OpenRA.Mods.Common
 {
 	public class MapGeneratorSettings
 	{
-		public int playerNum = 5;
+		public int playerNum = 4;
 		public int playerMinDistance = 4;
+
+		public int width = 90;
+		public int height = 90;
+		public string tileset = "";
 
 		public int startingMineNum = 2;
 		public int startingMineDistance = 10;
@@ -42,25 +46,25 @@ namespace OpenRA.Mods.Common
 	{
 		ActorInfo world;
 		MersenneTwister rng;
-		TileSet tileset;
 		public MapGeneratorSettings settings = new MapGeneratorSettings();
 
-		public MapGenerator(ActorInfo world, MersenneTwister rng, TileSet tileset)
+		public MapGenerator(ActorInfo world, MersenneTwister rng)
 		{
 			this.world = world;
 			this.rng = rng;
-			this.tileset = tileset;
+			this.settings.tileset = Game.ModData.DefaultTileSets.Select(t => t.Key).First();
 		}
 
-		public Map GenerateEmpty(int width, int height)
+		public Map GenerateEmpty()
 		{
 			// Require at least a 2x2 playable area so that the
 			// ground is visible through the edge shroud
-			width = Math.Max(2, width);
-			height = Math.Max(2, height);
+			var width = Math.Max(2, settings.width);
+			var height = Math.Max(2, settings.height);
 
 			var maxTerrainHeight = Game.ModData.Manifest.Get<MapGrid>().MaximumTerrainHeight;
 
+			var tileset = GetTileset();
 			var map = new Map(Game.ModData, tileset, width + 2, height + maxTerrainHeight + 2);
 
 			var tl = new PPos(1, 1);
@@ -73,15 +77,20 @@ namespace OpenRA.Mods.Common
 			return map;
 		}
 
-		public Map GenerateRandom(int width, int height)
+		public Map GenerateRandom()
 		{
-			var map = GenerateEmpty(width, height);
+			var map = GenerateEmpty();
 			var mapPlayers = new MapPlayers(map.Rules, 0);
 
 			GenerateRandomMap(map, mapPlayers, world);
 			map.PlayerDefinitions = mapPlayers.ToMiniYaml();
 
 			return map;
+		}
+
+		TileSet GetTileset()
+		{
+			return Game.ModData.DefaultTileSets[settings.tileset];
 		}
 
 		int mineDistance = 10;
@@ -200,6 +209,7 @@ namespace OpenRA.Mods.Common
 
 		void PlaceDebris(MPos location, int size, int num, Map map)
 		{
+			var tileset = GetTileset();
 			if (tileset.Generator == null || tileset.Generator.Debris == null
 					|| tileset.Generator.Debris.LandDebris == null) return;
 

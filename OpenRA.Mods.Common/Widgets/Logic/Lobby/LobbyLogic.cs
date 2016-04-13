@@ -446,7 +446,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 						{ "onExit", DoNothing },
 						{ "onSelect", onSelect },
 						{ "world", shellmapWorld },
-						{ "tileset", Game.ModData.DefaultTileSets[Map.TileSet] },
 					});
 				};
 

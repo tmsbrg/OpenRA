@@ -6,9 +6,9 @@ General:
 	HeightDebugColors: AA0000
 
 Generator:
-    Debris:
-        LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
-        WaterDebris: 57, 500, 505
+	Debris:
+		LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
+		WaterDebris: 57, 500, 505
 
 Terrain:
 	TerrainType@Beach:

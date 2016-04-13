@@ -50,11 +50,14 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				int.TryParse(heightTextField.Text, out height);
 
 				var worldActor = world.WorldActor.Info;
-				var tileset = modData.DefaultTileSets[tilesetDropDown.Text];
 
-				var mapGenerator = new MapGenerator(worldActor, world.SharedRandom, tileset);
+				var mapGenerator = new MapGenerator(worldActor, world.SharedRandom);
 
-				var map = mapGenerator.GenerateRandom(width, height);
+				mapGenerator.settings.tileset = tilesetDropDown.Text;
+				mapGenerator.settings.width = width;
+				mapGenerator.settings.height = height;
+
+				var map = mapGenerator.GenerateRandom();
 
 				Action<string> afterSave = uid =>
 				{

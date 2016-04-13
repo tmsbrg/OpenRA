@@ -22,18 +22,47 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 	public class MapGeneratorLogic : ChromeLogic
 	{
 		Widget widget;
-		MapGeneratorSettings settings = new MapGeneratorSettings();
 		MapGenerator mapGenerator;
 
 		[ObjectCreator.UseCtor]
-		internal MapGeneratorLogic(Widget widget, ModData modData, Action onExit, Action<string> onSelect, World world, TileSet tileset)
+		internal MapGeneratorLogic(Widget widget, ModData modData, Action onExit, Action<string> onSelect, World world)
 		{
 			this.widget = widget;
 			var worldActor = Game.ModData.DefaultRules.Actors["world"];
-			mapGenerator = new MapGenerator(worldActor, world.SharedRandom, tileset);
-			mapGenerator.settings = settings;
+			mapGenerator = new MapGenerator(worldActor, world.SharedRandom);
+			var settings = mapGenerator.settings;
 
 			BindSetting("PLAYER_NUM", (x) => { settings.playerNum = x; }, () => { return settings.playerNum; });
+			BindSetting("PLAYER_DIST", (x) => { settings.playerMinDistance = x; }, () => { return settings.playerMinDistance; });
+			BindSetting("WIDTH", (x) => { settings.width = x; }, () => { return settings.width; });
+			BindSetting("HEIGHT", (x) => { settings.height = x; }, () => { return settings.height; });
+			BindSetting("STARTING_MINE_NUM", (x) => { settings.startingMineNum = x; }, () => { return settings.startingMineNum; });
+			BindSetting("STARTING_MINE_DIST", (x) => { settings.startingMineDistance = x; }, () => { return settings.startingMineDistance; });
+			BindSetting("STARTING_MINE_SIZE", (x) => { settings.startingMineSize = x; }, () => { return settings.startingMineSize; });
+			BindSetting("STARTING_MINE_INTER_DIST", (x) => { settings.startingMineInterDistance = x; }, () => { return settings.startingMineInterDistance; });
+			BindSetting("EXTRA_MINE_NUM", (x) => { settings.extraMineNum = x; }, () => { return settings.extraMineNum; });
+			BindSetting("EXTRA_MINE_DIST", (x) => { settings.extraMineDistance = x; }, () => { return settings.extraMineDistance; });
+			BindSetting("EXTRA_MINE_SIZE", (x) => { settings.extraMineSize = x; }, () => { return settings.extraMineSize; });
+			BindSetting("DEBRIS_NUM_GROUPS", (x) => { settings.debrisNumGroups = x; }, () => { return settings.debrisNumGroups; });
+			BindSetting("DEBRIS_NUM_PER_GROUP", (x) => { settings.debrisNumPerGroup = x; }, () => { return settings.debrisNumPerGroup; });
+			BindSetting("DEBRIS_GROUP_SIZE", (x) => { settings.debrisGroupSize = x; }, () => { return settings.debrisGroupSize; });
+
+			var tilesetDropDown = widget.GetOrNull<DropDownButtonWidget>("TILESET_DROPDOWN");
+			if (tilesetDropDown != null)
+			{
+				var tilesets = modData.DefaultTileSets.Select(t => t.Key).ToList();
+				tilesetDropDown.Text = settings.tileset;
+				Func<string, ScrollItemWidget, ScrollItemWidget> setupItem = (option, template) =>
+				{
+					var item = ScrollItemWidget.Setup(template,
+						() => tilesetDropDown.Text == option,
+						() => { tilesetDropDown.Text = option; settings.tileset = option; });
+					item.Get<LabelWidget>("LABEL").GetText = () => option;
+					return item;
+				};
+				tilesetDropDown.OnClick = () =>
+					tilesetDropDown.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 210, tilesets, setupItem);
+			}
 
 			widget.Get<ButtonWidget>("BUTTON_CANCEL").OnClick = () => { Ui.CloseWindow(); onExit(); };
 			widget.Get<ButtonWidget>("BUTTON_GENERATE").OnClick = () =>
@@ -74,11 +103,13 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				if (field.IsValid()) return;
 				field.Text = getValue().ToString();
 			};
+			slider.Value = getValue();
+			field.Text = getValue().ToString();
 		}
 
 		string GenerateMap()
 		{
-			var map = mapGenerator.GenerateRandom(90, 90);
+			var map = mapGenerator.GenerateRandom();
 
 			// TODO: map saving should be in MapGenerator
 			map.Title = "Random Map";
