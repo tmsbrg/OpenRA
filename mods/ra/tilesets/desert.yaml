@@ -6,6 +6,10 @@ General:
 	EditorTemplateOrder: Terrain, Debris, Road, Cliffs, Water Cliffs, Beach, River, Bridge
 	HeightDebugColors: 880000
 
+Generator:
+	Debris:
+		LandDebris: 2, 4, 5, 6, 7, 14, 15, 16, 17, 35, 36, 37, 38
+
 Terrain:
 	TerrainType@Beach:
 		Type: Beach
