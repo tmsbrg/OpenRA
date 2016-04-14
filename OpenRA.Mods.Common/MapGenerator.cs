@@ -269,18 +269,13 @@ namespace OpenRA.Mods.Common
 			var playerLandSize = settings.startingMineDistance + settings.playerMinDistance;
 
 			var bounds = map.Bounds;
-			var playerBounds = Rectangle.FromLTRB(
-					bounds.Left + playerLandSize,
-					bounds.Top + playerLandSize,
-					bounds.Right - playerLandSize,
-					bounds.Bottom - playerLandSize);
 
 			var spawnLocations = new List<MPos>();
 			var bestSpawnLocations = new List<MPos>();
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
 			{
-				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(playerBounds));
+				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(bounds));
 				if (spawnLocations.Count() == settings.playerNum)
 				{
 					break;
@@ -306,7 +301,9 @@ namespace OpenRA.Mods.Common
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
-				var mineLocations = TryGetLocations(settings.startingMineNum, settings.startingMineInterDistance, map, () => GetMineLocation(location, map));
+				var mineLocations = TryGetLocations(settings.startingMineNum, () => GetMineLocation(location, map),
+						(p, locs) => CanPlaceActor(p, settings.startingMineInterDistance, locs, map) &&
+						 map.Contains(p));
 
 				// add mines around spawn points
 				foreach (var mineLocation in mineLocations)
