@@ -269,13 +269,20 @@ namespace OpenRA.Mods.Common
 			var playerLandSize = settings.startingMineDistance + settings.playerMinDistance;
 
 			var bounds = map.Bounds;
+			var playerBounds = Rectangle.FromLTRB(
+				bounds.Left + playerLandSize,
+				bounds.Top + playerLandSize,
+				bounds.Right - playerLandSize,
+				bounds.Bottom - playerLandSize);
+
+			if (bounds.Left >= bounds.Right || bounds.Top >= bounds.Bottom) return;
 
 			var spawnLocations = new List<MPos>();
 			var bestSpawnLocations = new List<MPos>();
 			var tries = 20;
 			for (var t = 0; t < tries; t++)
 			{
-				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(bounds));
+				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(playerBounds));
 				if (spawnLocations.Count() == settings.playerNum)
 				{
 					break;
