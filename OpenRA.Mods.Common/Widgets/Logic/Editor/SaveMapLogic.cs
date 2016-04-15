@@ -84,25 +84,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					return item;
 				};
 
-				foreach (var kv in modData.MapCache.MapLocations)
+				foreach (var kv in modData.MapCache.GetWriteableMapLocations())
 				{
-					var folder = kv.Key as Folder;
-					if (folder == null)
-						continue;
-
-					try
-					{
-						using (var fs = File.Create(Path.Combine(folder.Name, ".testwritable"), 1, FileOptions.DeleteOnClose))
-						{
-							// Do nothing: we just want to test whether we can create the file
-						}
-
-						writableDirectories.Add(new SaveDirectory(folder, kv.Value));
-					}
-					catch
-					{
-						// Directory is not writable
-					}
+					writableDirectories.Add(new SaveDirectory(kv.Key as Folder, kv.Value));
 				}
 
 				if (map.Package != null)

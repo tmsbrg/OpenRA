@@ -117,9 +117,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			map.Visibility = MapVisibility.Lobby;
 			map.RequiresMod = Game.ModData.Manifest.Mod.Id;
 
-			// TODO: test directory for write-access, and if there even is a directory, see SaveMapLogic.cs
-			// TODO: also this places the map file in OpenRA's directory. Preferably we'd put it in ~/.openra
-			var kv = Game.ModData.MapCache.MapLocations.First();
+			// hack: assume last writeable map location is the one in player's home folder
+			var kv = Game.ModData.MapCache.GetWriteableMapLocations().Last();
 			var folder = kv.Key as IReadWritePackage;
 			var classification = kv.Value;
 			var path = Platform.ResolvePath(Path.Combine(folder.Name, "__random__.oramap"));

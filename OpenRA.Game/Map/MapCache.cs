@@ -270,6 +270,33 @@ namespace OpenRA
 			return GetEnumerator();
 		}
 
+		// taken from OpenRA.Mods.Common/Widgets/Logic/Editor/SaveMapLogic, could probably be changed
+		// to make more sense here
+		public IReadOnlyDictionary<IReadOnlyPackage, MapClassification> GetWriteableMapLocations()
+		{
+			var writeableMapLocations = new Dictionary<IReadOnlyPackage, MapClassification>();
+			foreach (var kv in MapLocations)
+			{
+				var folder = kv.Key as Folder;
+				if (folder == null)
+					continue;
+
+				try
+				{
+					using (var fs = File.Create(Path.Combine(folder.Name, ".testwritable"), 1, FileOptions.DeleteOnClose))
+					{
+						// Do nothing: we just want to test whether we can create the file
+					}
+					writeableMapLocations.Add(folder, kv.Value);
+				}
+				catch
+				{
+					// Directory is not writable
+				}
+			}
+			return new ReadOnlyDictionary<IReadOnlyPackage, MapClassification>(writeableMapLocations);
+		}
+
 		public void Dispose()
 		{
 			if (previewLoaderThread == null)
