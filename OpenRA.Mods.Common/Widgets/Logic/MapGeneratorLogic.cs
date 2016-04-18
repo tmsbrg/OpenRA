@@ -112,16 +112,30 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var map = mapGenerator.GenerateRandom();
 
 			// TODO: map saving should be in MapGenerator
-			map.Title = "Random Map";
-			map.Author = "Random map generator";
-			map.Visibility = MapVisibility.Lobby;
-			map.RequiresMod = Game.ModData.Manifest.Mod.Id;
 
 			// hack: assume last writeable map location is the one in player's home folder
 			var kv = Game.ModData.MapCache.GetWriteableMapLocations().Last();
 			var folder = kv.Key as IReadWritePackage;
 			var classification = kv.Value;
-			var path = Platform.ResolvePath(Path.Combine(folder.Name, "__random__.oramap"));
+
+			// TODO: Check if it's better to use .Contents to find and increment he highest random map number present, instead
+			// of overwriting the earlier ones(e.g. if only random0001.oramap exists, use random0002.oramap instead of
+			// random0000.oramap)
+			var path = "";
+			for (var i = 0; path == ""; i++)
+			{
+				var i_str = "{0:0000}".F(i);
+				var filename = "random{0}.oramap".F(i_str);
+				if (!folder.Contains(filename))
+				{
+					path = Platform.ResolvePath(Path.Combine(folder.Name, filename));
+					map.Title = "Random Map {0}".F(i_str);
+				}
+			}
+
+			map.Author = "Random map generator";
+			map.Visibility = MapVisibility.Lobby;
+			map.RequiresMod = Game.ModData.Manifest.Mod.Id;
 
 			// TODO: test that it actually saves correctly
 			folder.Delete(path);
