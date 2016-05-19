@@ -22,7 +22,7 @@ namespace OpenRA.Mods.Common
 	public class MapGeneratorSettings
 	{
 		public int playerNum = 4;
-		public int playerMinDistance = 4;
+		public int playerDistFromCenter = 70;
 
 		public int width = 90;
 		public int height = 90;
@@ -160,6 +160,28 @@ namespace OpenRA.Mods.Common
 			return locations;
 		}
 
+		// TODO: use WPos
+		List<MPos> GetSpawnLocations(Map map)
+		{
+			var size = (float)Math.Min(settings.width, settings.height);
+			var dist = (float)settings.playerDistFromCenter / 100.0f * size * 0.5f;
+			var maxTerrainHeight = Game.ModData.Manifest.Get<MapGrid>().MaximumTerrainHeight;
+			var center = new MPos((int)(0.5 * settings.width), (int)(0.5 * (settings.height + maxTerrainHeight)).ToCPos(map);
+			var angle_per_player = Math.PI * 2 / settings.playerNum;
+
+			var angle = rng.NextFloat() * Math.PI * 2;
+			var spawnLocations = new List<MPos>();
+			for (var i = 0; i < settings.playerNum; i++)
+			{
+				var x = dist * (float)Math.Cos(angle);
+				var y = dist * (float)Math.Sin(angle);
+				var pos = center + new CVec((int)x, (int)y);
+				spawnLocations.Add(pos.ToMPos(map));
+				angle += angle_per_player;
+			}
+			return spawnLocations;
+		}
+
 		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world)
 		{
 			var resources = world.TraitInfos<ResourceTypeInfo>();
@@ -266,37 +288,14 @@ namespace OpenRA.Mods.Common
 			var mpspawn = actors["mpspawn"];
 			var mineInfo = mineTypes.First();
 
-			var playerLandSize = settings.startingMineDistance + settings.playerMinDistance;
+			var minDistFromPlayers = 5;
+			var playerLandSize = settings.startingMineDistance + minDistFromPlayers;
 
 			var bounds = map.Bounds;
-			var playerBounds = Rectangle.FromLTRB(
-				bounds.Left + playerLandSize,
-				bounds.Top + playerLandSize,
-				bounds.Right - playerLandSize,
-				bounds.Bottom - playerLandSize);
 
 			if (bounds.Left >= bounds.Right || bounds.Top >= bounds.Bottom) return;
 
-			var spawnLocations = new List<MPos>();
-			var bestSpawnLocations = new List<MPos>();
-			var tries = 20;
-			for (var t = 0; t < tries; t++)
-			{
-				spawnLocations = TryGetLocations(settings.playerNum, playerLandSize * 2, map, () => RandomLocation(playerBounds));
-				if (spawnLocations.Count() == settings.playerNum)
-				{
-					break;
-				}
-				else if (spawnLocations.Count() > bestSpawnLocations.Count())
-				{
-					bestSpawnLocations = spawnLocations;
-				}
-			}
-			if (spawnLocations.Count() != settings.playerNum)
-			{
-				spawnLocations = bestSpawnLocations;
-				Console.WriteLine("MapGenerator: Couldn't place all players(placed "+spawnLocations.Count()+" instead of "+settings.playerNum+")");
-			}
+			var spawnLocations = GetSpawnLocations(map);
 
 			foreach (var location in spawnLocations)
 			{

@@ -40,14 +40,14 @@ Background@MAPGENERATOR_PANEL:
 			Align: Left
 			Width: 120
 			Height: 20
-			Text: Player Minimal Distance
+			Text: Player Dist. From Center
 		Slider@PLAYER_DIST_SLIDER:
 			X: 40
 			Y: 180
 			Width: 120
 			Height: 20
-			MinimumValue: 1
-			MaximumValue: 20
+			MinimumValue: 30
+			MaximumValue: 90
 			Ticks: 20
 		TextField@PLAYER_DIST_FIELD:
 			X: 160
@@ -67,8 +67,8 @@ Background@MAPGENERATOR_PANEL:
 			Y: 260
 			Width: 120
 			Height: 20
-			MinimumValue: 32
-			MaximumValue: 128
+			MinimumValue: 40
+			MaximumValue: 140
 			Ticks: 97
 		TextField@WIDTH_FIELD:
 			X: 160
@@ -88,8 +88,8 @@ Background@MAPGENERATOR_PANEL:
 			Y: 340
 			Width: 120
 			Height: 20
-			MinimumValue: 32
-			MaximumValue: 128
+			MinimumValue: 40
+			MaximumValue: 140
 			Ticks: 97
 		TextField@HEIGHT_FIELD:
 			X: 160
