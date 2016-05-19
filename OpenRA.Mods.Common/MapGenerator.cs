@@ -101,12 +101,10 @@ namespace OpenRA.Mods.Common
 			return new CVec((int)x, (int)y);
 		}
 
-		MPos GetMineLocation(MPos spawnLocation, Map map)
+		CPos GetMineLocation(CPos spawnLocation, Map map)
 		{
-			var spawnLocationCell = spawnLocation.ToCPos(map);
-
 			// assumes this location is valid(inside map and not intersecting with enemy)
-			return (spawnLocationCell + GetRandomVecWithDistance((float)settings.startingMineDistance)).ToMPos(map);
+			return spawnLocation + GetRandomVecWithDistance((float)settings.startingMineDistance);
 		}
 
 		int actorNum = 0;
@@ -115,31 +113,33 @@ namespace OpenRA.Mods.Common
 			return actorNum++;
 		}
 
-		bool CanPlaceActor(MPos pos, int minDistance, List<MPos> locations, Map map)
+		bool CanPlaceActor(CPos pos, int minDistance, List<CPos> locations, Map map)
 		{
-			var cpos = pos.ToCPos(map);
 			foreach (var location in locations)
 			{
-				var otherpos = location.ToCPos(map);
-				var distance = (otherpos - cpos).Length;
+				var otherpos = location;
+				var distance = (otherpos - pos).Length;
 				if (distance < minDistance ) return false;
 			}
 			return true;
 		}
 
-		MPos RandomLocation(Rectangle bounds)
+		CPos RandomLocation(Map map)
 		{
-			return new MPos(rng.Next(bounds.Left, bounds.Right), rng.Next(bounds.Top, bounds.Bottom));
+			var br = map.ProjectedBottomRight;
+			var tl = map.ProjectedTopLeft;
+			var wpos = new WPos(rng.Next(tl.X, br.X), rng.Next(tl.Y, br.Y), 0);
+			return map.CellContaining(wpos);
 		}
 
-		List<MPos> TryGetLocations(int num, int minDistance, Map map, Func<MPos> getPos)
+		List<CPos> TryGetLocations(int num, int minDistance, Map map, Func<CPos> getPos)
 		{
 			return TryGetLocations(num, getPos, (pos, locations) => CanPlaceActor(pos, minDistance, locations, map));
 		}
 
-		List<MPos> TryGetLocations(int num, Func<MPos> getPos, Func<MPos, List<MPos>, bool> checkPos)
+		List<CPos> TryGetLocations(int num, Func<CPos> getPos, Func<CPos, List<CPos>, bool> checkPos)
 		{
-			var locations = new List<MPos>();
+			var locations = new List<CPos>();
 			for (var i = 0; i < num; i++)
 			{
 				var tries = 10;
@@ -160,29 +160,34 @@ namespace OpenRA.Mods.Common
 			return locations;
 		}
 
-		// TODO: use WPos
-		List<MPos> GetSpawnLocations(Map map)
+		List<CPos> GetSpawnLocations(Map map)
 		{
-			var size = (float)Math.Min(settings.width, settings.height);
-			var dist = (float)settings.playerDistFromCenter / 100.0f * size * 0.5f;
-			var maxTerrainHeight = Game.ModData.Manifest.Get<MapGrid>().MaximumTerrainHeight;
-			var center = new MPos((int)(0.5 * settings.width), (int)(0.5 * (settings.height + maxTerrainHeight)).ToCPos(map);
+			// map center function?
+			var br = map.ProjectedBottomRight;
+			var tl = map.ProjectedTopLeft;
+			var width = br.X - tl.X;
+			var height = br.Y - tl.Y;
+			var center = tl + new WVec(width / 2, height / 2, 0);
+
+			var distWidth = (float)settings.playerDistFromCenter / 100.0f * width * 0.5f;
+			var distHeight = (float)settings.playerDistFromCenter / 100.0f * height * 0.5f;
 			var angle_per_player = Math.PI * 2 / settings.playerNum;
 
+
 			var angle = rng.NextFloat() * Math.PI * 2;
-			var spawnLocations = new List<MPos>();
+			var spawnLocations = new List<CPos>();
 			for (var i = 0; i < settings.playerNum; i++)
 			{
-				var x = dist * (float)Math.Cos(angle);
-				var y = dist * (float)Math.Sin(angle);
-				var pos = center + new CVec((int)x, (int)y);
-				spawnLocations.Add(pos.ToMPos(map));
+				var x = distWidth * (float)Math.Cos(angle);
+				var y = distHeight * (float)Math.Sin(angle);
+				var pos = map.CellContaining(center + new WVec((int)x, (int)y, 0));
+				spawnLocations.Add(pos);
 				angle += angle_per_player;
 			}
 			return spawnLocations;
 		}
 
-		void PlaceResourceMine(MPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world)
+		void PlaceResourceMine(CPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world)
 		{
 			var resources = world.TraitInfos<ResourceTypeInfo>();
 			var resourceLayer = map.Resources;
@@ -190,7 +195,7 @@ namespace OpenRA.Mods.Common
 			var mine = new ActorReference(mineInfo.Name);
 			mine.Add(new OwnerInit("Neutral"));
 
-			mine.Add(new LocationInit(location.ToCPos(map)));
+			mine.Add(new LocationInit(location));
 
 			map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), mine.Save()));
 
@@ -207,7 +212,7 @@ namespace OpenRA.Mods.Common
 				var success = false;
 				for (var t = 0; t < tries; t++)
 				{
-					var cell = Util.RandomWalk(location.ToCPos(map), rng)
+					var cell = Util.RandomWalk(location, rng)
 						.Take(size)
 						.SkipWhile(p => !resourceLayer.Contains(p) ||
 								resourceLayer[p].Type != 0)
@@ -227,7 +232,7 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
-		void PlaceDebris(MPos location, int size, int num, Map map)
+		void PlaceDebris(CPos location, int size, int num, Map map)
 		{
 			var tileset = GetTileset();
 			if (tileset.Generator == null || tileset.Generator.Debris == null
@@ -239,7 +244,7 @@ namespace OpenRA.Mods.Common
 			{
 				var index = debris[rng.Next(0, debris.Count())];
 				var template = tileset.Templates[index];
-				CPos cell = location.ToCPos(map) + GetRandomVecWithDistance(rng.Next(0, size));
+				CPos cell = location + GetRandomVecWithDistance(rng.Next(0, size));
 
 				PlaceTile(cell, template, map);
 			}
@@ -291,10 +296,6 @@ namespace OpenRA.Mods.Common
 			var minDistFromPlayers = 5;
 			var playerLandSize = settings.startingMineDistance + minDistFromPlayers;
 
-			var bounds = map.Bounds;
-
-			if (bounds.Left >= bounds.Right || bounds.Top >= bounds.Bottom) return;
-
 			var spawnLocations = GetSpawnLocations(map);
 
 			foreach (var location in spawnLocations)
@@ -303,7 +304,7 @@ namespace OpenRA.Mods.Common
 				var spawn = new ActorReference(mpspawn.Name);
 				spawn.Add(new OwnerInit(neutral.Name));
 
-				spawn.Add(new LocationInit(location.ToCPos(map)));
+				spawn.Add(new LocationInit(location));
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
@@ -318,7 +319,7 @@ namespace OpenRA.Mods.Common
 				}
 			}
 
-			var debrisLocations = TryGetLocations(settings.debrisNumGroups, () => RandomLocation(bounds),
+			var debrisLocations = TryGetLocations(settings.debrisNumGroups, () => RandomLocation(map),
 					(p, locs) => CanPlaceActor(p, settings.debrisGroupSize, locs, map) &&
 					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
 
@@ -327,7 +328,7 @@ namespace OpenRA.Mods.Common
 				PlaceDebris(location, settings.debrisGroupSize, settings.debrisNumPerGroup, map);
 			}
 
-			var extraResourceLocations = TryGetLocations(settings.extraMineNum, () => RandomLocation(bounds),
+			var extraResourceLocations = TryGetLocations(settings.extraMineNum, () => RandomLocation(map),
 					(p, locs) => CanPlaceActor(p, settings.extraMineDistance, locs, map) &&
 					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
 
