@@ -33,7 +33,8 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var settings = mapGenerator.settings;
 
 			BindSetting("PLAYER_NUM", (x) => { settings.playerNum = x; }, () => { return settings.playerNum; });
-			BindSetting("PLAYER_DIST", (x) => { settings.playerMinDistance = x; }, () => { return settings.playerMinDistance; });
+			BindSetting("PLAYER_DIST", (x) => { settings.playerDistFromCenter = x; },
+				() => { return settings.playerDistFromCenter; });
 			BindSetting("WIDTH", (x) => { settings.width = x; }, () => { return settings.width; });
 			BindSetting("HEIGHT", (x) => { settings.height = x; }, () => { return settings.height; });
 			BindSetting("STARTING_MINE_NUM", (x) => { settings.startingMineNum = x; }, () => { return settings.startingMineNum; });
