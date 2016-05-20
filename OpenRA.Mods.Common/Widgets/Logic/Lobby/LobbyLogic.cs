@@ -72,6 +72,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		int globalChatLastReadMessages;
 		int globalChatUnreadMessages;
 
+		// TODO: sync map generator settings
+		MapGenerator mapGenerator;
+
 		// Listen for connection failures
 		void ConnectionStateChanged(OrderManager om)
 		{
@@ -434,6 +437,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var mapGeneration = optionsBin.GetOrNull<ButtonWidget>("MAP_GENERATION_BUTTON");
 			if (mapGeneration != null)
 			{
+				mapGenerator = new MapGenerator(modRules.Actors["world"], shellmapWorld.SharedRandom);
 				mapGeneration.IsDisabled = () => configurationDisabled() || !skirmishMode;
 				mapGeneration.OnClick = () =>
 				{
@@ -445,7 +449,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 					{
 						{ "onExit", DoNothing },
 						{ "onSelect", onSelect },
-						{ "world", shellmapWorld },
+						{ "mapGenerator", mapGenerator },
 					});
 				};
 

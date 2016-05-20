@@ -18,18 +18,17 @@ using OpenRA.FileSystem;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
-	// TODO: sync map generator settings
 	public class MapGeneratorLogic : ChromeLogic
 	{
 		Widget widget;
 		MapGenerator mapGenerator;
 
 		[ObjectCreator.UseCtor]
-		internal MapGeneratorLogic(Widget widget, ModData modData, Action onExit, Action<string> onSelect, World world)
+		internal MapGeneratorLogic(Widget widget, ModData modData, Action onExit, Action<string> onSelect,
+			MapGenerator mapGenerator)
 		{
 			this.widget = widget;
-			var worldActor = Game.ModData.DefaultRules.Actors["world"];
-			mapGenerator = new MapGenerator(worldActor, world.SharedRandom);
+			this.mapGenerator = mapGenerator;
 			var settings = mapGenerator.settings;
 
 			BindSetting("PLAYER_NUM", (x) => { settings.playerNum = x; }, () => { return settings.playerNum; });
