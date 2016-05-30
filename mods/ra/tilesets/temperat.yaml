@@ -9,6 +9,21 @@ Generator:
 	Debris:
 		LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
 		WaterDebris: 57, 500, 505
+    SimpleCliffs:
+        # straight
+        NS_E: 158, 159, 160
+        NS_W: 144, 145, 146
+        WE_N: 151, 152, 153
+        WE_S: 137, 138, 139
+        # corners
+        NE_I: 167
+        NE_O: 165
+        NW_I: 170
+        NW_O: 164
+        SE_I: 168
+        SE_O: 166
+        SW_I: 169
+        SW_O: 163
 
 Terrain:
 	TerrainType@Beach:

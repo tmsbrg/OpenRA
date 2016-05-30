@@ -24,9 +24,34 @@ namespace OpenRA
 		}
 	}
 
+	public class SimpleCliffSetInfo
+	{
+		// straight
+		public readonly ushort[] NS_E;
+		public readonly ushort[] NS_W;
+		public readonly ushort[] WE_N;
+		public readonly ushort[] WE_S;
+
+		// corners
+		public readonly ushort[] NE_I;
+		public readonly ushort[] NE_O;
+		public readonly ushort[] NW_I;
+		public readonly ushort[] NW_O;
+		public readonly ushort[] SE_I;
+		public readonly ushort[] SE_O;
+		public readonly ushort[] SW_I;
+		public readonly ushort[] SW_O;
+
+		public SimpleCliffSetInfo(MiniYaml my)
+		{
+			FieldLoader.Load(this, my);
+		}
+	}
+
 	public class GeneratorInfo
 	{
 		public readonly DebrisSetInfo Debris;
+		public readonly SimpleCliffSetInfo SimpleCliffs;
 
 		public GeneratorInfo(MiniYaml my)
 		{
@@ -35,6 +60,10 @@ namespace OpenRA
 			if (md.ContainsKey("Debris"))
 			{
 				Debris = new DebrisSetInfo(md["Debris"]);
+			}
+			if (md.ContainsKey("SimpleCliffs"))
+			{
+				SimpleCliffs = new SimpleCliffSetInfo(md["SimpleCliffs"]);
 			}
 		}
 	}
