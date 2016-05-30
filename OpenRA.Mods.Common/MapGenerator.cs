@@ -28,6 +28,8 @@ namespace OpenRA.Mods.Common
 		public int height = 90;
 		public string tileset = "";
 
+		public int cliffsNum = 5; // TODO: UI
+
 		public int startingMineNum = 2;
 		public int startingMineDistance = 10;
 		public int startingMineSize = 32;
@@ -276,6 +278,46 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
+		void AddCliffs(Map map, List<CPos> spawnLocations, int playerLandSize)
+		{
+			var tileset = GetTileset();
+			if (tileset.Generator == null || tileset.Generator.SimpleCliffs == null) return;
+
+			var cliffTilesize = 2;
+			var cliffStartLocations = TryGetLocations(settings.cliffsNum, () => RandomLocation(map),
+					(p, locs) => CanPlaceActor(p, cliffTilesize, locs, map) &&
+					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
+
+			// draw lines from start location
+			// determine size with settings for: average size, size random factor
+			// setting for chance to take curved route
+			// can grow from either end. Cannot get too close to spawn locations or each others' lines
+			// line is a list of CPos. Cells of upper left corner of each tile
+
+			// select tiles by looking at their position in the list, if previous tile is north and next is east, tile is
+			// NE_I or NE_O depending on facing
+
+			// WILL NEED LAYER OF CELLS TO DETERMINE WHERE WE CAN PLACE THINGS IN A SANE WAY!
+			// CellLayer<enum> class probably the good idea
+			// enum values:
+			//  - Empty
+			//  - Player
+			//  - PlayerIntimate
+			//  - Cliff
+			//  - SeedsResource
+			//  - Resource
+			//  - Debris
+
+			/*
+			foreach (var location in cliffStartLocations)
+			{
+				var index = tileset.Generator.SimpleCliffs.WE_S[0];
+				var template = tileset.Templates[index];
+				PlaceTile(location, template, map);
+			}
+			*/
+		}
+
 		void GenerateRandomMap(Map map, MapPlayers mapPlayers, ActorInfo world)
 		{
 			var players = mapPlayers.Players;
@@ -296,8 +338,8 @@ namespace OpenRA.Mods.Common
 			var minDistFromPlayers = 5;
 			var playerLandSize = settings.startingMineDistance + minDistFromPlayers;
 
+			// Create spawn points
 			var spawnLocations = GetSpawnLocations(map);
-
 			foreach (var location in spawnLocations)
 			{
 				// add spawn point
@@ -319,6 +361,9 @@ namespace OpenRA.Mods.Common
 				}
 			}
 
+			AddCliffs(map, spawnLocations, playerLandSize);
+
+			// Debris
 			var debrisLocations = TryGetLocations(settings.debrisNumGroups, () => RandomLocation(map),
 					(p, locs) => CanPlaceActor(p, settings.debrisGroupSize, locs, map) &&
 					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
@@ -328,6 +373,7 @@ namespace OpenRA.Mods.Common
 				PlaceDebris(location, settings.debrisGroupSize, settings.debrisNumPerGroup, map);
 			}
 
+			// Extra resources
 			var extraResourceLocations = TryGetLocations(settings.extraMineNum, () => RandomLocation(map),
 					(p, locs) => CanPlaceActor(p, settings.extraMineDistance, locs, map) &&
 					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
@@ -337,6 +383,7 @@ namespace OpenRA.Mods.Common
 				PlaceResourceMine(location, settings.extraMineSize, mineInfo, map, world);
 			}
 
+			// Add players
 			var creepEnemies = new List<string>();
 			for (var i = 0; i < spawnLocations.Count(); i++)
 			{

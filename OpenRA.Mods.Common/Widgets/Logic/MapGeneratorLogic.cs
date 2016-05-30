@@ -118,9 +118,6 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var folder = kv.Key as IReadWritePackage;
 			var classification = kv.Value;
 
-			// TODO: Check if it's better to use .Contents to find and increment he highest random map number present, instead
-			// of overwriting the earlier ones(e.g. if only random0001.oramap exists, use random0002.oramap instead of
-			// random0000.oramap)
 			var path = "";
 			for (var i = 0; path == ""; i++)
 			{
