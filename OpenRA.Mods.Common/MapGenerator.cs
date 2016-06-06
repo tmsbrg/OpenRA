@@ -28,7 +28,11 @@ namespace OpenRA.Mods.Common
 		public int height = 90;
 		public string tileset = "";
 
-		public int cliffsNum = 5; // TODO: UI
+		// TODO: UI
+		public int cliffNum = 20;
+		public int cliffAverageSize = 8;
+		public int cliffSizeVariance = 5;
+		public int cliffJitter = 40;
 
 		public int startingMineNum = 2;
 		public int startingMineDistance = 10;
@@ -46,9 +50,9 @@ namespace OpenRA.Mods.Common
 
 	public class MapGenerator
 	{
+		public MapGeneratorSettings settings = new MapGeneratorSettings();
 		ActorInfo world;
 		MersenneTwister rng;
-		public MapGeneratorSettings settings = new MapGeneratorSettings();
 
 		public MapGenerator(ActorInfo world, MersenneTwister rng)
 		{
@@ -132,6 +136,25 @@ namespace OpenRA.Mods.Common
 			var tl = map.ProjectedTopLeft;
 			var wpos = new WPos(rng.Next(tl.X, br.X), rng.Next(tl.Y, br.Y), 0);
 			return map.CellContaining(wpos);
+		}
+
+		List<CPos> GetPoissonLocations(int num, int minDistance, CellLayer<bool> occupiedMap)
+		{
+			var sampler = new PoissonDiskSampler(settings.width, settings.height, 6, rng);
+
+			var points = sampler.Generate(minDistance);
+			var locations = new List<CPos>(num);
+			while (locations.Count < num && points.Count > 0)
+			{
+				int i = rng.Next(points.Count);
+				var point = points[i];
+				points.RemoveAt(i);
+				if (!occupiedMap[point])
+				{
+					locations.Add(point);
+				}
+			}
+			return locations;
 		}
 
 		List<CPos> TryGetLocations(int num, int minDistance, Map map, Func<CPos> getPos)
@@ -278,15 +301,13 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
-		void AddCliffs(Map map, List<CPos> spawnLocations, int playerLandSize)
+		void AddCliffs(Map map, CellLayer<bool> occupiedMap)
 		{
 			var tileset = GetTileset();
 			if (tileset.Generator == null || tileset.Generator.SimpleCliffs == null) return;
 
-			var cliffTilesize = 2;
-			var cliffStartLocations = TryGetLocations(settings.cliffsNum, () => RandomLocation(map),
-					(p, locs) => CanPlaceActor(p, cliffTilesize, locs, map) &&
-					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
+			var cliffTileSize = 2;
+			var cliffStartLocations = GetPoissonLocations(settings.cliffNum, cliffTileSize, occupiedMap);
 
 			// draw lines from start location
 			// determine size with settings for: average size, size random factor
@@ -297,25 +318,27 @@ namespace OpenRA.Mods.Common
 			// select tiles by looking at their position in the list, if previous tile is north and next is east, tile is
 			// NE_I or NE_O depending on facing
 
-			// WILL NEED LAYER OF CELLS TO DETERMINE WHERE WE CAN PLACE THINGS IN A SANE WAY!
-			// CellLayer<enum> class probably the good idea
-			// enum values:
-			//  - Empty
-			//  - Player
-			//  - PlayerIntimate
-			//  - Cliff
-			//  - SeedsResource
-			//  - Resource
-			//  - Debris
-
-			/*
 			foreach (var location in cliffStartLocations)
 			{
 				var index = tileset.Generator.SimpleCliffs.WE_S[0];
 				var template = tileset.Templates[index];
 				PlaceTile(location, template, map);
 			}
-			*/
+		}
+
+		void OccupyTilesInDisk(CPos pos, int radius, CellLayer<bool> occupiedMap)
+		{
+			for (var y = -radius; y <= radius; y++)
+			{
+				for (var x = -radius; x <= radius; x++)
+				{
+					var p = pos + new CVec(x, y);
+					if (occupiedMap.Contains(p) && (x * x) + (y * y) <= radius * radius)
+					{
+						occupiedMap[p] = true;
+					}
+				}
+			}
 		}
 
 		void GenerateRandomMap(Map map, MapPlayers mapPlayers, ActorInfo world)
@@ -338,11 +361,13 @@ namespace OpenRA.Mods.Common
 			var minDistFromPlayers = 5;
 			var playerLandSize = settings.startingMineDistance + minDistFromPlayers;
 
+			// contains true for every cell that's occupied, false otherwise
+			var occupiedMap = new CellLayer<bool>(map);
+
 			// Create spawn points
 			var spawnLocations = GetSpawnLocations(map);
 			foreach (var location in spawnLocations)
 			{
-				// add spawn point
 				var spawn = new ActorReference(mpspawn.Name);
 				spawn.Add(new OwnerInit(neutral.Name));
 
@@ -359,9 +384,11 @@ namespace OpenRA.Mods.Common
 				{
 					PlaceResourceMine(mineLocation, settings.startingMineSize, mineInfo, map, world);
 				}
+
+				OccupyTilesInDisk(location, playerLandSize, occupiedMap);
 			}
 
-			AddCliffs(map, spawnLocations, playerLandSize);
+			AddCliffs(map, occupiedMap);
 
 			// Debris
 			var debrisLocations = TryGetLocations(settings.debrisNumGroups, () => RandomLocation(map),
