@@ -29,7 +29,7 @@ namespace OpenRA.Mods.Common
 		public string tileset = "";
 
 		// TODO: UI
-		public int cliffNum = 20;
+		public int cliffNum = 5;
 		public int cliffAverageSize = 8;
 		public int cliffSizeVariance = 5;
 		public int cliffJitter = 40;
@@ -53,6 +53,7 @@ namespace OpenRA.Mods.Common
 		public MapGeneratorSettings settings = new MapGeneratorSettings();
 		ActorInfo world;
 		MersenneTwister rng;
+		CellLayer<bool> occupiedMap;
 
 		public MapGenerator(ActorInfo world, MersenneTwister rng)
 		{
@@ -138,9 +139,9 @@ namespace OpenRA.Mods.Common
 			return map.CellContaining(wpos);
 		}
 
-		List<CPos> GetPoissonLocations(int num, int minDistance, CellLayer<bool> occupiedMap)
+		List<CPos> GetPoissonLocations(int num, int minDistance, int edgeDistance, int size=1)
 		{
-			var sampler = new PoissonDiskSampler(settings.width, settings.height, 6, rng);
+			var sampler = new PoissonDiskSampler(settings.width, settings.height, edgeDistance, 6, rng);
 
 			var points = sampler.Generate(minDistance);
 			var locations = new List<CPos>(num);
@@ -149,7 +150,7 @@ namespace OpenRA.Mods.Common
 				int i = rng.Next(points.Count);
 				var point = points[i];
 				points.RemoveAt(i);
-				if (!occupiedMap[point])
+				if (!IsAreaOccupied(point, size))
 				{
 					locations.Add(point);
 				}
@@ -212,7 +213,7 @@ namespace OpenRA.Mods.Common
 			return spawnLocations;
 		}
 
-		void PlaceResourceMine(CPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world)
+		void PlaceResourceMine(CPos location, int size, ActorInfo mineInfo, Map map, ActorInfo world, bool isStartingMine=false)
 		{
 			var resources = world.TraitInfos<ResourceTypeInfo>();
 			var resourceLayer = map.Resources;
@@ -240,7 +241,8 @@ namespace OpenRA.Mods.Common
 					var cell = Util.RandomWalk(location, rng)
 						.Take(size)
 						.SkipWhile(p => !resourceLayer.Contains(p) ||
-								resourceLayer[p].Type != 0)
+								resourceLayer[p].Type != 0 ||
+								(!isStartingMine && occupiedMap[p]))
 						.Cast<CPos?>().FirstOrDefault();
 
 					if (cell != null)
@@ -271,7 +273,11 @@ namespace OpenRA.Mods.Common
 				var template = tileset.Templates[index];
 				CPos cell = location + GetRandomVecWithDistance(rng.Next(0, size));
 
-				PlaceTile(cell, template, map);
+				if (!IsAreaOccupied(cell, 1))
+				{
+					PlaceTile(cell, template, map);
+					OccupyTilesInSquare(cell, 1);
+				}
 			}
 		}
 
@@ -301,13 +307,14 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
-		void AddCliffs(Map map, CellLayer<bool> occupiedMap)
+		void AddCliffs(Map map)
 		{
 			var tileset = GetTileset();
 			if (tileset.Generator == null || tileset.Generator.SimpleCliffs == null) return;
 
 			var cliffTileSize = 2;
-			var cliffStartLocations = GetPoissonLocations(settings.cliffNum, cliffTileSize, occupiedMap);
+			var cliffDistance = cliffTileSize * settings.cliffAverageSize - settings.cliffSizeVariance;
+			var cliffStartLocations = GetPoissonLocations(settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize);
 
 			// draw lines from start location
 			// determine size with settings for: average size, size random factor
@@ -323,10 +330,38 @@ namespace OpenRA.Mods.Common
 				var index = tileset.Generator.SimpleCliffs.WE_S[0];
 				var template = tileset.Templates[index];
 				PlaceTile(location, template, map);
+				OccupyTilesInSquare(location, cliffTileSize);
 			}
 		}
 
-		void OccupyTilesInDisk(CPos pos, int radius, CellLayer<bool> occupiedMap)
+		bool IsAreaOccupied(CPos pos, int size)
+		{
+			for (var x = 0; x < size; x++)
+			{
+				for (var y = 0; y < size; y++)
+				{
+					var p = pos + new CVec(x, y);
+					if (occupiedMap.Contains(p) && occupiedMap[pos + new CVec(x, y)]) return true;
+				}
+			}
+			return false;
+		}
+
+		void OccupyTilesInSquare(CPos pos, int size)
+		{
+			for (var x = 0; x < size; x++)
+			{
+				for (var y = 0; y < size; y++)
+				{
+					var p = pos + new CVec(x, y);
+					if (occupiedMap.Contains(p)) occupiedMap[pos + new CVec(x, y)] = true;
+				}
+			}
+		}
+
+
+		// TODO: use built in Map.FindTilesInCircle
+		void OccupyTilesInDisk(CPos pos, int radius)
 		{
 			for (var y = -radius; y <= radius; y++)
 			{
@@ -362,7 +397,7 @@ namespace OpenRA.Mods.Common
 			var playerLandSize = settings.startingMineDistance + minDistFromPlayers;
 
 			// contains true for every cell that's occupied, false otherwise
-			var occupiedMap = new CellLayer<bool>(map);
+			occupiedMap = new CellLayer<bool>(map);
 
 			// Create spawn points
 			var spawnLocations = GetSpawnLocations(map);
@@ -375,6 +410,7 @@ namespace OpenRA.Mods.Common
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
+				// TODO: remove TryGetLocations
 				var mineLocations = TryGetLocations(settings.startingMineNum, () => GetMineLocation(location, map),
 						(p, locs) => CanPlaceActor(p, settings.startingMineInterDistance, locs, map) &&
 						 map.Contains(p));
@@ -382,18 +418,17 @@ namespace OpenRA.Mods.Common
 				// add mines around spawn points
 				foreach (var mineLocation in mineLocations)
 				{
-					PlaceResourceMine(mineLocation, settings.startingMineSize, mineInfo, map, world);
+					PlaceResourceMine(mineLocation, settings.startingMineSize, mineInfo, map, world, true);
 				}
 
-				OccupyTilesInDisk(location, playerLandSize, occupiedMap);
+				OccupyTilesInDisk(location, playerLandSize);
 			}
 
-			AddCliffs(map, occupiedMap);
+			AddCliffs(map);
 
 			// Debris
-			var debrisLocations = TryGetLocations(settings.debrisNumGroups, () => RandomLocation(map),
-					(p, locs) => CanPlaceActor(p, settings.debrisGroupSize, locs, map) &&
-					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
+			var debrisLocations = GetPoissonLocations(settings.debrisNumGroups, settings.debrisGroupSize,
+					settings.debrisGroupSize);
 
 			foreach (var location in debrisLocations)
 			{
@@ -401,9 +436,8 @@ namespace OpenRA.Mods.Common
 			}
 
 			// Extra resources
-			var extraResourceLocations = TryGetLocations(settings.extraMineNum, () => RandomLocation(map),
-					(p, locs) => CanPlaceActor(p, settings.extraMineDistance, locs, map) &&
-					 CanPlaceActor(p, playerLandSize, spawnLocations, map));
+			var extraResourceLocations = GetPoissonLocations(settings.extraMineNum, settings.extraMineDistance,
+					settings.extraMineDistance);
 
 			foreach (var location in extraResourceLocations)
 			{
