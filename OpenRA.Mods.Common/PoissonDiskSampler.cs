@@ -19,15 +19,17 @@ namespace OpenRA.Mods.Common
 	{
 		public int width;
 		public int height;
+		public int edgeDistance;
 		public int newPointsCount;
 		MersenneTwister rng;
 
-		public PoissonDiskSampler(int width, int height, int newPointsCount, MersenneTwister rng)
+		public PoissonDiskSampler(int width, int height, int edgeDistance, int newPointsCount, MersenneTwister rng)
 		{
 			this.width = width;
 			this.height = height;
 			this.newPointsCount = newPointsCount;
 			this.rng = rng;
+			this.edgeDistance = edgeDistance;
 		}
 
 		public List<CPos> Generate(int minDistance)
@@ -39,7 +41,13 @@ namespace OpenRA.Mods.Common
 			var processPoints = new List<CPos>();
 			var samplePoints = new List<CPos>();
 
-			var firstPoint = new CPos(rng.Next(0, width), rng.Next(0, height));
+			if (width - edgeDistance < edgeDistance || height - edgeDistance < edgeDistance)
+			{
+				return samplePoints;
+			}
+
+			var firstPoint = new CPos(rng.Next(edgeDistance, width - edgeDistance),
+					rng.Next(edgeDistance, height - edgeDistance));
 
 			processPoints.Add(firstPoint);
 			samplePoints.Add(firstPoint);
@@ -83,7 +91,7 @@ namespace OpenRA.Mods.Common
 
 		bool inBounds(int x, int y)
 		{
-			return x >= 0 && y >= 0 && x < width && y < height;
+			return x >= edgeDistance && y >= edgeDistance && x < width - edgeDistance && y < height - edgeDistance;
 		}
 
 		bool inGrid(int x, int y, CPos?[,] grid)
