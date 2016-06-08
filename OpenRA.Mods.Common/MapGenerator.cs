@@ -139,11 +139,11 @@ namespace OpenRA.Mods.Common
 			return map.CellContaining(wpos);
 		}
 
-		List<CPos> GetPoissonLocations(int num, int minDistance, int edgeDistance, int size=1)
+		List<CPos> GetPoissonLocations(Map map, int num, int minDistance, int edgeDistance, int size=1)
 		{
-			var sampler = new PoissonDiskSampler(settings.width, settings.height, edgeDistance, 6, rng);
+			var sampler = new PoissonDiskSampler(edgeDistance, 6, rng);
 
-			var points = sampler.Generate(minDistance);
+			var points = sampler.Generate(map, minDistance);
 			var locations = new List<CPos>(num);
 			while (locations.Count < num && points.Count > 0)
 			{
@@ -314,7 +314,7 @@ namespace OpenRA.Mods.Common
 
 			var cliffTileSize = 2;
 			var cliffDistance = cliffTileSize * settings.cliffAverageSize - settings.cliffSizeVariance;
-			var cliffStartLocations = GetPoissonLocations(settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize);
+			var cliffStartLocations = GetPoissonLocations(map, settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize);
 
 			// draw lines from start location
 			// determine size with settings for: average size, size random factor
@@ -427,7 +427,7 @@ namespace OpenRA.Mods.Common
 			AddCliffs(map);
 
 			// Debris
-			var debrisLocations = GetPoissonLocations(settings.debrisNumGroups, settings.debrisGroupSize,
+			var debrisLocations = GetPoissonLocations(map, settings.debrisNumGroups, settings.debrisGroupSize,
 					settings.debrisGroupSize);
 
 			foreach (var location in debrisLocations)
@@ -436,7 +436,7 @@ namespace OpenRA.Mods.Common
 			}
 
 			// Extra resources
-			var extraResourceLocations = GetPoissonLocations(settings.extraMineNum, settings.extraMineDistance,
+			var extraResourceLocations = GetPoissonLocations(map, settings.extraMineNum, settings.extraMineDistance,
 					settings.extraMineDistance);
 
 			foreach (var location in extraResourceLocations)

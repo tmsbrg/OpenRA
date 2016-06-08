@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using OpenRA.Support;
 
 namespace OpenRA
 {
@@ -85,6 +86,12 @@ namespace OpenRA
 		{
 			var uv = cell.ToMPos(gridType);
 			return uv.U >= mapTopLeft.U && uv.U <= mapBottomRight.U && uv.V >= mapTopLeft.V && uv.V <= mapBottomRight.V;
+		}
+
+		public CPos ChooseRandomCell(MersenneTwister rand)
+		{
+			var area = new MPos(mapBottomRight.U - mapTopLeft.U, mapBottomRight.V - mapTopLeft.V);
+			return new MPos(rand.Next(area.U), rand.Next(area.V)).ToCPos(gridType);
 		}
 
 		public MapCoordsRegion MapCoords
