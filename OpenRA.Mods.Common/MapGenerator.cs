@@ -29,7 +29,7 @@ namespace OpenRA.Mods.Common
 		public string tileset = "";
 
 		// TODO: UI
-		public int cliffNum = 5;
+		public int cliffNum = 50;
 		public int cliffAverageSize = 8;
 		public int cliffSizeVariance = 5;
 		public int cliffJitter = 40;
@@ -234,18 +234,17 @@ namespace OpenRA.Mods.Common
 
 			for (var i = 0; i < size; i++)
 			{
-				var tries = 10;
+				var tries = 50;
 				var success = false;
 				for (var t = 0; t < tries; t++)
 				{
 					var cell = Util.RandomWalk(location, rng)
 						.Take(size)
 						.SkipWhile(p => !resourceLayer.Contains(p) ||
-								resourceLayer[p].Type != 0 ||
-								(!isStartingMine && occupiedMap[p]))
+								resourceLayer[p].Type != 0)
 						.Cast<CPos?>().FirstOrDefault();
 
-					if (cell != null)
+					if (cell.HasValue && (isStartingMine || !occupiedMap[cell.Value]))
 					{
 						resourceLayer[cell.Value] = new ResourceTile(type, index);
 						success = true;
@@ -307,6 +306,7 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
+
 		void AddCliffs(Map map)
 		{
 			var tileset = GetTileset();
@@ -325,12 +325,53 @@ namespace OpenRA.Mods.Common
 			// select tiles by looking at their position in the list, if previous tile is north and next is east, tile is
 			// NE_I or NE_O depending on facing
 
-			foreach (var location in cliffStartLocations)
+			var cliffDirections = new []
 			{
+				new CVec(cliffTileSize, 0),
+				new CVec(0, cliffTileSize),
+				new CVec(-cliffTileSize, 0),
+				new CVec(0, -cliffTileSize)
+			};
+			foreach (var startLocation in cliffStartLocations)
+			{
+				var cliffsDirection1 = new List<CPos>(settings.cliffNum);
+				var cliffsDirection2 = new List<CPos>(settings.cliffNum);
+				var direction1 = rng.Next(4);
+				var direction2 = rng.Next(3);
+				if (direction2 >= direction1) direction2++;
+
 				var index = tileset.Generator.SimpleCliffs.WE_S[0];
 				var template = tileset.Templates[index];
-				PlaceTile(location, template, map);
-				OccupyTilesInSquare(location, cliffTileSize);
+				PlaceTile(startLocation, template, map);
+				OccupyTilesInSquare(startLocation, cliffTileSize);
+
+				var size = rng.Next(settings.cliffAverageSize - settings.cliffSizeVariance,
+						settings.cliffAverageSize + settings.cliffSizeVariance);
+				for (var i = 0; i < size; i++)
+				{
+					List<CPos> list;
+					CVec direction;
+					if (rng.Next(2) > 0) // 50%
+					{
+						list = cliffsDirection1;
+						direction = cliffDirections[direction1];
+					}
+					else
+					{
+						list = cliffsDirection2;
+						direction = cliffDirections[direction2];
+					}
+					var oldPos = (list.Count > 0) ? list.Last() : startLocation;
+					var pos = oldPos + direction;
+					if (!IsAreaOccupied(pos, cliffTileSize))
+					{
+						list.Add(pos);
+						index = tileset.Generator.SimpleCliffs.WE_S[0];
+						template = tileset.Templates[index];
+						PlaceTile(pos, template, map);
+						OccupyTilesInSquare(pos, cliffTileSize);
+					}
+				}
 			}
 		}
 
