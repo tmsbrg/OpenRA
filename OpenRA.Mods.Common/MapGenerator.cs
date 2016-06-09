@@ -340,11 +340,6 @@ namespace OpenRA.Mods.Common
 				var direction2 = rng.Next(3);
 				if (direction2 >= direction1) direction2++;
 
-				var index = tileset.Generator.SimpleCliffs.WE_S[0];
-				var template = tileset.Templates[index];
-				PlaceTile(startLocation, template, map);
-				OccupyTilesInSquare(startLocation, cliffTileSize);
-
 				var size = rng.Next(settings.cliffAverageSize - settings.cliffSizeVariance,
 						settings.cliffAverageSize + settings.cliffSizeVariance);
 				for (var i = 0; i < size; i++)
@@ -366,13 +361,133 @@ namespace OpenRA.Mods.Common
 					if (!IsAreaOccupied(pos, cliffTileSize))
 					{
 						list.Add(pos);
-						index = tileset.Generator.SimpleCliffs.WE_S[0];
-						template = tileset.Templates[index];
-						PlaceTile(pos, template, map);
 						OccupyTilesInSquare(pos, cliffTileSize);
 					}
 				}
+
+				CPos? prevPos = null;
+				CPos? currPos = null;
+				foreach (var nextPos in Enumerable.Reverse(cliffsDirection1))
+				{
+					if (currPos.HasValue)
+					{
+						placeCliff(currPos.Value, prevPos, nextPos, tileset, map);
+					}
+					prevPos = currPos;
+					currPos = nextPos;
+				}
+				{
+					var nextPos = startLocation;
+					if (currPos.HasValue)
+					{
+						placeCliff(currPos.Value, prevPos, nextPos, tileset, map);
+					}
+					prevPos = currPos;
+					currPos = nextPos;
+				}
+				foreach (var nextPos in cliffsDirection2)
+				{
+					if (currPos.HasValue)
+					{
+						placeCliff(currPos.Value, prevPos, nextPos, tileset, map);
+					}
+					prevPos = currPos;
+					currPos = nextPos;
+				}
+				if (currPos.HasValue)
+				{
+					placeCliff(currPos.Value, prevPos, null, tileset, map);
+				}
 			}
+		}
+
+		enum Direction {
+			NORTH,
+			EAST,
+			SOUTH,
+			WEST
+		}
+
+		void placeCliff(CPos pos, CPos? prevPos, CPos? nextPos, TileSet tileset, Map map)
+		{
+			var tiles = tileset.Generator.SimpleCliffs;
+			var cliffType = tiles.WE;
+			if (prevPos.HasValue && nextPos.HasValue)
+			{
+				var dirPrev = GetDirection(pos, prevPos.Value);
+				var dirNext = GetDirection(pos, nextPos.Value);
+				switch(dirPrev)
+				{
+					case Direction.NORTH:
+						switch(dirNext)
+						{
+							case Direction.EAST:
+								cliffType = tiles.NE;
+								break;
+							case Direction.SOUTH:
+								cliffType = tiles.NS;
+								break;
+							case Direction.WEST:
+								cliffType = tiles.NW;
+								break;
+						}
+						break;
+					case Direction.EAST:
+						switch(dirNext)
+						{
+							case Direction.NORTH:
+								cliffType = tiles.EN;
+								break;
+							case Direction.SOUTH:
+								cliffType = tiles.ES;
+								break;
+							case Direction.WEST:
+								cliffType = tiles.EW;
+								break;
+						}
+						break;
+					case Direction.SOUTH:
+						switch(dirNext)
+						{
+							case Direction.NORTH:
+								cliffType = tiles.SN;
+								break;
+							case Direction.EAST:
+								cliffType = tiles.SE;
+								break;
+							case Direction.WEST:
+								cliffType = tiles.SW;
+								break;
+						}
+						break;
+					case Direction.WEST:
+						switch(dirNext)
+						{
+							case Direction.NORTH:
+								cliffType = tiles.WN;
+								break;
+							case Direction.EAST:
+								cliffType = tiles.WE;
+								break;
+							case Direction.SOUTH:
+								cliffType = tiles.WS;
+								break;
+						}
+						break;
+				}
+			}
+			var index = cliffType[rng.Next(cliffType.Count())];
+			var template = tileset.Templates[index];
+			PlaceTile(pos, template, map);
+		}
+
+		// assumes given CPos differ only on one axis, and are never the same position
+		Direction GetDirection(CPos from, CPos to)
+		{
+			if (from.Y > to.Y) return Direction.NORTH;
+			if (from.X > to.X) return Direction.WEST;
+			if (from.Y < to.Y) return Direction.SOUTH;
+			return Direction.EAST;
 		}
 
 		bool IsAreaOccupied(CPos pos, int size)
