@@ -27,20 +27,20 @@ namespace OpenRA
 	public class SimpleCliffSetInfo
 	{
 		// straight
-		public readonly ushort[] NS_E;
-		public readonly ushort[] NS_W;
-		public readonly ushort[] WE_N;
-		public readonly ushort[] WE_S;
+		public readonly ushort[] NS;
+		public readonly ushort[] SN;
+		public readonly ushort[] WE;
+		public readonly ushort[] EW;
 
 		// corners
-		public readonly ushort[] NE_I;
-		public readonly ushort[] NE_O;
-		public readonly ushort[] NW_I;
-		public readonly ushort[] NW_O;
-		public readonly ushort[] SE_I;
-		public readonly ushort[] SE_O;
-		public readonly ushort[] SW_I;
-		public readonly ushort[] SW_O;
+		public readonly ushort[] NE;
+		public readonly ushort[] EN;
+		public readonly ushort[] NW;
+		public readonly ushort[] WN;
+		public readonly ushort[] SE;
+		public readonly ushort[] ES;
+		public readonly ushort[] SW;
+		public readonly ushort[] WS;
 
 		public SimpleCliffSetInfo(MiniYaml my)
 		{
