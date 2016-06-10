@@ -9,6 +9,33 @@ Generator:
 	Debris:
 		LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
 		WaterDebris: 57
+    SimpleCliffs:
+        # explanation: in temperat.yaml
+        # straight
+        SN: 158, 159, 160
+        NS: 144, 145, 146
+        WE: 137, 138, 139
+        EW: 151, 152, 153
+        # corners
+        EN: 167
+        NE: 163
+        NW: 170
+        WN: 166
+        SE: 168
+        ES: 164
+        WS: 169
+        SW: 165
+        # edges
+        _N: 162
+        _E: 135
+        _S: 142
+        _W: 155
+        N_: 148
+        E_: 149
+        S_: 156
+        W_: 141
+        Offsets:
+            S_: 0, 1
 
 Terrain:
 	TerrainType@Beach:
