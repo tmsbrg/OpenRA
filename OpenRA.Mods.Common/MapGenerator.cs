@@ -412,7 +412,45 @@ namespace OpenRA.Mods.Common
 		{
 			var tiles = tileset.Generator.SimpleCliffs;
 			var cliffType = tiles.WE;
-			if (prevPos.HasValue && nextPos.HasValue)
+			if (!prevPos.HasValue && nextPos.HasValue)
+			{
+				var dir = GetDirection(pos, nextPos.Value);
+				switch (dir)
+				{
+					case Direction.NORTH:
+						cliffType = tiles._N;
+						break;
+					case Direction.EAST:
+						cliffType = tiles._E;
+						break;
+					case Direction.SOUTH:
+						cliffType = tiles._S;
+						break;
+					case Direction.WEST:
+						cliffType = tiles._W;
+						break;
+				}
+			}
+			else if (prevPos.HasValue && !nextPos.HasValue)
+			{
+				var dir = GetDirection(pos, prevPos.Value);
+				switch (dir)
+				{
+					case Direction.NORTH:
+						cliffType = tiles.N_;
+						break;
+					case Direction.EAST:
+						cliffType = tiles.E_;
+						break;
+					case Direction.SOUTH:
+						cliffType = tiles.S_;
+						break;
+					case Direction.WEST:
+						cliffType = tiles.W_;
+						break;
+				}
+			}
+			else if (prevPos.HasValue && nextPos.HasValue)
 			{
 				var dirPrev = GetDirection(pos, prevPos.Value);
 				var dirNext = GetDirection(pos, nextPos.Value);

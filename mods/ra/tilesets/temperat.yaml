@@ -10,6 +10,9 @@ Generator:
 		LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
 		WaterDebris: 57, 500, 505
     SimpleCliffs:
+        # explanation: letter 1 is the direction
+        # to previous tile, letter 2 is the direction
+        # to next tile (letters are directions N, E, S or W)
         # straight
         SN: 158, 159, 160
         NS: 144, 145, 146
@@ -24,6 +27,19 @@ Generator:
         ES: 164
         WS: 169
         SW: 165
+        # edges
+        # _N is a SOUTHERN start (previous tile is null, next tile is North)
+        # explanation: N_ is a SOUTHERN end (previous tile is North, next tile is null)
+        _N: 162
+        _E: 135
+        _S: 142
+        _W: 155
+        N_: 148
+        E_: 149
+        S_: 156
+        W_: 141
+        Offsets:
+            S_: 0, 1
 
 Terrain:
 	TerrainType@Beach:

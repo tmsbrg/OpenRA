@@ -42,6 +42,16 @@ namespace OpenRA
 		public readonly ushort[] SW;
 		public readonly ushort[] WS;
 
+		// edges
+		public readonly ushort[] _N;
+		public readonly ushort[] _E;
+		public readonly ushort[] _S;
+		public readonly ushort[] _W;
+		public readonly ushort[] N_;
+		public readonly ushort[] E_;
+		public readonly ushort[] S_;
+		public readonly ushort[] W_;
+
 		public SimpleCliffSetInfo(MiniYaml my)
 		{
 			FieldLoader.Load(this, my);
