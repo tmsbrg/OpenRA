@@ -46,6 +46,10 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			BindSetting("DEBRIS_NUM_GROUPS", (x) => { settings.debrisNumGroups = x; }, () => { return settings.debrisNumGroups; });
 			BindSetting("DEBRIS_NUM_PER_GROUP", (x) => { settings.debrisNumPerGroup = x; }, () => { return settings.debrisNumPerGroup; });
 			BindSetting("DEBRIS_GROUP_SIZE", (x) => { settings.debrisGroupSize = x; }, () => { return settings.debrisGroupSize; });
+			BindSetting("CLIFF_NUM", (x) => { settings.cliffNum = x; }, () => { return settings.cliffNum; });
+			BindSetting("CLIFF_AVERAGE_SIZE", (x) => { settings.cliffAverageSize = x; }, () => { return settings.cliffAverageSize; });
+			BindSetting("CLIFF_SIZE_VARIANCE", (x) => { settings.cliffSizeVariance = x; }, () => { return settings.cliffSizeVariance; });
+			BindSetting("CLIFF_JITTER", (x) => { settings.cliffJitter = x; }, () => { return settings.cliffJitter; });
 
 			var tilesetDropDown = widget.GetOrNull<DropDownButtonWidget>("TILESET_DROPDOWN");
 			if (tilesetDropDown != null)

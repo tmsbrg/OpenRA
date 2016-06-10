@@ -48,7 +48,7 @@ Background@MAPGENERATOR_PANEL:
 			Height: 20
 			MinimumValue: 30
 			MaximumValue: 90
-			Ticks: 20
+			Ticks: 61
 		TextField@PLAYER_DIST_FIELD:
 			X: 160
 			Y: 180
@@ -320,6 +320,91 @@ Background@MAPGENERATOR_PANEL:
 		TextField@DEBRIS_GROUP_SIZE_FIELD:
 			X: 700
 			Y: 260
+			Width: 28
+			Height: 20
+			MaxLength: 2
+
+		Label@CLIFF_NUM_LABEL:
+			X: 400
+			Y: 380
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliffs
+		Slider@CLIFF_NUM_SLIDER:
+			X: 400
+			Y: 420
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 20
+			Ticks: 21
+		TextField@CLIFF_NUM_FIELD:
+			X: 520
+			Y: 420
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@CLIFF_JITTER_LABEL:
+			X: 400
+			Y: 460
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliff Jitter
+		Slider@CLIFF_JITTER_SLIDER:
+			X: 400
+			Y: 500
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 100
+			Ticks: 101
+		TextField@CLIFF_JITTER_FIELD:
+			X: 520
+			Y: 500
+			Width: 36
+			Height: 20
+			MaxLength: 3
+		Label@CLIFF_AVERAGE_SIZE_LABEL:
+			X: 580
+			Y: 380
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliff Avg. Size
+		Slider@CLIFF_AVERAGE_SIZE_SLIDER:
+			X: 580
+			Y: 420
+			Width: 120
+			Height: 20
+			MinimumValue: 5
+			MaximumValue: 40
+			Ticks: 36
+		TextField@CLIFF_AVERAGE_SIZE_FIELD:
+			X: 700
+			Y: 420
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@CLIFF_SIZE_VARIANCE_LABEL:
+			X: 580
+			Y: 460
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliff Size Variance
+		Slider@CLIFF_SIZE_VARIANCE_SLIDER:
+			X: 580
+			Y: 500
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 10
+			Ticks: 11
+		TextField@CLIFF_SIZE_VARIANCE_FIELD:
+			X: 700
+			Y: 500
 			Width: 28
 			Height: 20
 			MaxLength: 2
