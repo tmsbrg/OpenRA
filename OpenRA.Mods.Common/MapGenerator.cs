@@ -370,25 +370,7 @@ namespace OpenRA.Mods.Common
 
 				CPos? prevPos = null;
 				CPos? currPos = null;
-				foreach (var nextPos in Enumerable.Reverse(cliffsDirection1))
-				{
-					if (currPos.HasValue)
-					{
-						placeCliff(currPos.Value, prevPos, nextPos, tileset, map);
-					}
-					prevPos = currPos;
-					currPos = nextPos;
-				}
-				{
-					var nextPos = startLocation;
-					if (currPos.HasValue)
-					{
-						placeCliff(currPos.Value, prevPos, nextPos, tileset, map);
-					}
-					prevPos = currPos;
-					currPos = nextPos;
-				}
-				foreach (var nextPos in cliffsDirection2)
+				foreach (var nextPos in EnumerateCliffs(cliffsDirection1, startLocation, cliffsDirection2))
 				{
 					if (currPos.HasValue)
 					{
@@ -412,6 +394,20 @@ namespace OpenRA.Mods.Common
 				return (direction + 4 + change) % 4;
 			}
 			return direction;
+		}
+
+		IEnumerable<CPos> EnumerateCliffs(List<CPos> cliffsDirection1, CPos startLocation, List<CPos> cliffsDirection2)
+		{
+			foreach (var pos in Enumerable.Reverse(cliffsDirection1))
+			{
+				yield return pos;
+			}
+			yield return startLocation;
+			foreach (var pos in cliffsDirection2)
+			{
+				yield return pos;
+			}
+			yield break;
 		}
 
 		enum Direction {
