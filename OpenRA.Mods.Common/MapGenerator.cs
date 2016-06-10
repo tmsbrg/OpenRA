@@ -28,12 +28,6 @@ namespace OpenRA.Mods.Common
 		public int height = 90;
 		public string tileset = "";
 
-		// TODO: UI
-		public int cliffNum = 50;
-		public int cliffAverageSize = 8;
-		public int cliffSizeVariance = 5;
-		public int cliffJitter = 40;
-
 		public int startingMineNum = 2;
 		public int startingMineDistance = 10;
 		public int startingMineSize = 32;
@@ -46,6 +40,12 @@ namespace OpenRA.Mods.Common
 		public int debrisNumGroups = 20;
 		public int debrisNumPerGroup = 7;
 		public int debrisGroupSize = 6;
+
+		public int cliffNum = 7;
+		public int cliffAverageSize = 8;
+		public int cliffSizeVariance = 5;
+		public int cliffJitter = 40;
+
 	}
 
 	public class MapGenerator
@@ -313,7 +313,7 @@ namespace OpenRA.Mods.Common
 			if (tileset.Generator == null || tileset.Generator.SimpleCliffs == null) return;
 
 			var cliffTileSize = 2;
-			var cliffDistance = cliffTileSize * settings.cliffAverageSize - settings.cliffSizeVariance;
+			var cliffDistance = cliffTileSize * 4; // arbitrary, but to keep them from being too close
 			var cliffStartLocations = GetPoissonLocations(map, settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize);
 
 			// draw lines from start location
@@ -342,6 +342,7 @@ namespace OpenRA.Mods.Common
 
 				var size = rng.Next(settings.cliffAverageSize - settings.cliffSizeVariance,
 						settings.cliffAverageSize + settings.cliffSizeVariance);
+				if (size < 2) size = 2;
 				for (var i = 0; i < size; i++)
 				{
 					List<CPos> list;
@@ -350,11 +351,13 @@ namespace OpenRA.Mods.Common
 					{
 						list = cliffsDirection1;
 						direction = cliffDirections[direction1];
+						direction1 = jitterCliff(direction1);
 					}
 					else
 					{
 						list = cliffsDirection2;
 						direction = cliffDirections[direction2];
+						direction2 = jitterCliff(direction2);
 					}
 					var oldPos = (list.Count > 0) ? list.Last() : startLocation;
 					var pos = oldPos + direction;
@@ -399,6 +402,16 @@ namespace OpenRA.Mods.Common
 					placeCliff(currPos.Value, prevPos, null, tileset, map);
 				}
 			}
+		}
+
+		int jitterCliff(int direction)
+		{
+			if (rng.Next(100) < settings.cliffJitter)
+			{
+				var change = (rng.Next(2) > 0) ? 1 : -1;
+				return (direction + 4 + change) % 4;
+			}
+			return direction;
 		}
 
 		enum Direction {
