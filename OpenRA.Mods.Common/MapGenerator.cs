@@ -351,13 +351,13 @@ namespace OpenRA.Mods.Common
 					{
 						list = cliffsDirection1;
 						direction = cliffDirections[direction1];
-						direction1 = jitterCliff(direction1);
+						direction1 = JitterCliff(direction1);
 					}
 					else
 					{
 						list = cliffsDirection2;
 						direction = cliffDirections[direction2];
-						direction2 = jitterCliff(direction2);
+						direction2 = JitterCliff(direction2);
 					}
 					var oldPos = (list.Count > 0) ? list.Last() : startLocation;
 					var pos = oldPos + direction;
@@ -374,19 +374,19 @@ namespace OpenRA.Mods.Common
 				{
 					if (currPos.HasValue)
 					{
-						placeCliff(currPos.Value, prevPos, nextPos, tileset, map);
+						PlaceCliff(currPos.Value, prevPos, nextPos, tileset, map);
 					}
 					prevPos = currPos;
 					currPos = nextPos;
 				}
 				if (currPos.HasValue)
 				{
-					placeCliff(currPos.Value, prevPos, null, tileset, map);
+					PlaceCliff(currPos.Value, prevPos, null, tileset, map);
 				}
 			}
 		}
 
-		int jitterCliff(int direction)
+		int JitterCliff(int direction)
 		{
 			if (rng.Next(100) < settings.cliffJitter)
 			{
@@ -417,7 +417,7 @@ namespace OpenRA.Mods.Common
 			WEST
 		}
 
-		void placeCliff(CPos pos, CPos? prevPos, CPos? nextPos, TileSet tileset, Map map)
+		void PlaceCliff(CPos pos, CPos? prevPos, CPos? nextPos, TileSet tileset, Map map)
 		{
 			var tiles = tileset.Generator.SimpleCliffs;
 			var cliffType = tiles.WE;
