@@ -198,6 +198,7 @@
     <Compile Include="ActorInitializer.cs" />
     <Compile Include="Scripting\Properties\AmmoPoolProperties.cs" />
     <Compile Include="MapGenerator.cs" />
+    <Compile Include="PoissonDiskSampler.cs" />
     <Compile Include="ShroudExts.cs" />
     <Compile Include="Orders\BeaconOrderGenerator.cs" />
     <Compile Include="Orders\DeployOrderTargeter.cs" />

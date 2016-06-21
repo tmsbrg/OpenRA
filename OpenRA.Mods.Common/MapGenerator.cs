@@ -131,14 +131,6 @@ namespace OpenRA.Mods.Common
 			return true;
 		}
 
-		CPos RandomLocation(Map map)
-		{
-			var br = map.ProjectedBottomRight;
-			var tl = map.ProjectedTopLeft;
-			var wpos = new WPos(rng.Next(tl.X, br.X), rng.Next(tl.Y, br.Y), 0);
-			return map.CellContaining(wpos);
-		}
-
 		List<CPos> GetPoissonLocations(Map map, int num, int minDistance, int edgeDistance, int size=1)
 		{
 			var sampler = new PoissonDiskSampler(edgeDistance, 6, rng);
@@ -154,34 +146,6 @@ namespace OpenRA.Mods.Common
 				{
 					locations.Add(point);
 				}
-			}
-			return locations;
-		}
-
-		List<CPos> TryGetLocations(int num, int minDistance, Map map, Func<CPos> getPos)
-		{
-			return TryGetLocations(num, getPos, (pos, locations) => CanPlaceActor(pos, minDistance, locations, map));
-		}
-
-		List<CPos> TryGetLocations(int num, Func<CPos> getPos, Func<CPos, List<CPos>, bool> checkPos)
-		{
-			var locations = new List<CPos>();
-			for (var i = 0; i < num; i++)
-			{
-				var tries = 10;
-				var success = false;
-				for (var t = 0; t < tries; t++)
-				{
-					success = false;
-					var pos = getPos();
-					if (checkPos(pos, locations))
-					{
-						locations.Add(pos);
-						success = true;
-						break;
-					}
-				}
-				if (!success) break;
 			}
 			return locations;
 		}
@@ -315,15 +279,6 @@ namespace OpenRA.Mods.Common
 			var cliffTileSize = 2;
 			var cliffDistance = cliffTileSize * 4; // arbitrary, but to keep them from being too close
 			var cliffStartLocations = GetPoissonLocations(map, settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize);
-
-			// draw lines from start location
-			// determine size with settings for: average size, size random factor
-			// setting for chance to take curved route
-			// can grow from either end. Cannot get too close to spawn locations or each others' lines
-			// line is a list of CPos. Cells of upper left corner of each tile
-
-			// select tiles by looking at their position in the list, if previous tile is north and next is east, tile is
-			// NE_I or NE_O depending on facing
 
 			var cliffDirections = new []
 			{
@@ -613,12 +568,25 @@ namespace OpenRA.Mods.Common
 
 				map.ActorDefinitions.Add(new MiniYamlNode("Actor"+NextActorNumber(), spawn.Save()));
 
-				// TODO: remove TryGetLocations
-				var mineLocations = TryGetLocations(settings.startingMineNum, () => GetMineLocation(location, map),
-						(p, locs) => CanPlaceActor(p, settings.startingMineInterDistance, locs, map) &&
-						 map.Contains(p));
-
 				// add mines around spawn points
+				var mineLocations = new List<CPos>();
+				for (var i = 0; i < settings.startingMineNum; i++)
+				{
+					var tries = 10;
+					var success = false;
+					for (var t = 0; t < tries; t++)
+					{
+						success = false;
+						var pos = GetMineLocation(location, map);
+						if (CanPlaceActor(pos, settings.startingMineInterDistance, mineLocations, map))
+						{
+							mineLocations.Add(pos);
+							success = true;
+							break;
+						}
+					}
+					if (!success) break;
+				}
 				foreach (var mineLocation in mineLocations)
 				{
 					PlaceResourceMine(mineLocation, settings.startingMineSize, mineInfo, map, world, true);

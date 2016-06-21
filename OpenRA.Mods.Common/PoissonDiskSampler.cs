@@ -55,7 +55,7 @@ namespace OpenRA.Mods.Common
 
 			processPoints.Add(firstPoint);
 			samplePoints.Add(firstPoint);
-			var firstGridPoint = pointToGrid(firstPoint, map, cellSize);
+			var firstGridPoint = PointToGrid(firstPoint, map, cellSize);
 			grid[firstGridPoint.X,firstGridPoint.Y] = firstPoint;
 
 			while (processPoints.Count > 0)
@@ -65,11 +65,11 @@ namespace OpenRA.Mods.Common
 				{
 					var newPoint = GeneratePointAround(point, minDistance);
 
-					if (region.Contains(newPoint) && !inNeighbourhood(grid, newPoint, minDistance, map, cellSize))
+					if (region.Contains(newPoint) && !InNeighbourhood(grid, newPoint, minDistance, map, cellSize))
 					{
 						processPoints.Add(newPoint);
 						samplePoints.Add(newPoint);
-						var gridPoint = pointToGrid(newPoint, map, cellSize);
+						var gridPoint = PointToGrid(newPoint, map, cellSize);
 						grid[gridPoint.X,gridPoint.Y] = newPoint;
 					}
 				}
@@ -93,19 +93,19 @@ namespace OpenRA.Mods.Common
 			return new CPos((int)(point.X + radius * Math.Cos(angle)), (int)(point.Y + radius * Math.Sin(angle)));
 		}
 
-		bool inGrid(int x, int y, CPos?[,] grid)
+		bool InGrid(int x, int y, CPos?[,] grid)
 		{
 			return x >= 0 && y >= 0 && x < grid.GetLength(0) && y < grid.GetLength(1);
 		}
 
-		bool inNeighbourhood(CPos?[,] grid, CPos point, int minDistance, Map map, float cellSize)
+		bool InNeighbourhood(CPos?[,] grid, CPos point, int minDistance, Map map, float cellSize)
 		{
-			var gridPoint = pointToGrid(point, map, cellSize);
+			var gridPoint = PointToGrid(point, map, cellSize);
 			for (var x = gridPoint.X - 2; x <= gridPoint.X + 2; x++)
 			{
 				for (var y = gridPoint.Y - 2; y <= gridPoint.Y + 2; y++)
 				{
-					if (inGrid(x, y, grid) && grid[x,y].HasValue && Distance(grid[x,y].Value, point) < (float)minDistance)
+					if (InGrid(x, y, grid) && grid[x,y].HasValue && Distance(grid[x,y].Value, point) < (float)minDistance)
 					{
 						return true;
 					}
@@ -120,7 +120,7 @@ namespace OpenRA.Mods.Common
 		}
 
 		// not really a normal CPos, this actually returns our GridPoint
-		CPos pointToGrid(CPos point, Map map, float cellSize)
+		CPos PointToGrid(CPos point, Map map, float cellSize)
 		{
 			var wPoint = map.CenterOfCell(point);
 			return new CPos((int)(wPoint.X / cellSize), (int)(wPoint.Y / cellSize));
