@@ -1,0 +1,428 @@
+Background@MAPGENERATOR_PANEL:
+	X: (WINDOW_RIGHT - WIDTH)/2
+	Y: (WINDOW_BOTTOM - HEIGHT)/2
+	Logic: MapGeneratorLogic
+	Width: 808
+	Height: 575
+    Background: panel-black
+	Children:
+		Label@MAPGENERATOR_TITLE:
+			Y: 15
+			Align: Center
+			Width: PARENT_RIGHT
+			Height: 20
+			Text: Map Generator
+			Font: Bold
+
+		Label@PLAYER_NUM_LABEL:
+			X: 40
+			Y: 60
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Players
+		Slider@PLAYER_NUM_SLIDER:
+			X: 40
+			Y: 100
+			Width: 120
+			Height: 20
+			MinimumValue: 2
+			MaximumValue: 8
+			Ticks: 8
+		TextField@PLAYER_NUM_FIELD:
+			X: 160
+			Y: 100
+			Width: 20
+			Height: 20
+			MaxLength: 1
+		Label@PLAYER_DIST_LABEL:
+			X: 40
+			Y: 140
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Player Dist. From Center
+		Slider@PLAYER_DIST_SLIDER:
+			X: 40
+			Y: 180
+			Width: 120
+			Height: 20
+			MinimumValue: 30
+			MaximumValue: 90
+			Ticks: 61
+		TextField@PLAYER_DIST_FIELD:
+			X: 160
+			Y: 180
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@WIDTH_LABEL:
+			X: 40
+			Y: 220
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Width
+		Slider@WIDTH_SLIDER:
+			X: 40
+			Y: 260
+			Width: 120
+			Height: 20
+			MinimumValue: 40
+			MaximumValue: 140
+			Ticks: 97
+		TextField@WIDTH_FIELD:
+			X: 160
+			Y: 260
+			Width: 36
+			Height: 20
+			MaxLength: 3
+		Label@HEIGHT_LABEL:
+			X: 40
+			Y: 300
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Height
+		Slider@HEIGHT_SLIDER:
+			X: 40
+			Y: 340
+			Width: 120
+			Height: 20
+			MinimumValue: 40
+			MaximumValue: 140
+			Ticks: 97
+		TextField@HEIGHT_FIELD:
+			X: 160
+			Y: 340
+			Width: 36
+			Height: 20
+			MaxLength: 3
+		Label@TILESET_LABEL:
+			X: 40
+			Y: 380
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: TileSet
+		DropDownButton@TILESET_DROPDOWN:
+			X: 40
+			Y: 420
+			Width: 160
+			Height: 20
+			Font: Regular
+
+		Label@STARTING_MINE_NUM_LABEL:
+			X: 220
+			Y: 60
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Starting mines
+		Slider@STARTING_MINE_NUM_SLIDER:
+			X: 220
+			Y: 100
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 4
+			Ticks: 5
+		TextField@STARTING_MINE_NUM_FIELD:
+			X: 340
+			Y: 100
+			Width: 20
+			Height: 20
+			MaxLength: 1
+		Label@STARTING_MINE_DIST_LABEL:
+			X: 220
+			Y: 140
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Starting mine distance
+		Slider@STARTING_MINE_DIST_SLIDER:
+			X: 220
+			Y: 180
+			Width: 120
+			Height: 20
+			MinimumValue: 5
+			MaximumValue: 20
+			Ticks: 16
+		TextField@STARTING_MINE_DIST_FIELD:
+			X: 340
+			Y: 180
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@STARTING_MINE_SIZE_LABEL:
+			X: 220
+			Y: 220
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Starting mine size
+		Slider@STARTING_MINE_SIZE_SLIDER:
+			X: 220
+			Y: 260
+			Width: 120
+			Height: 20
+			MinimumValue: 1
+			MaximumValue: 128
+			Ticks: 128
+		TextField@STARTING_MINE_SIZE_FIELD:
+			X: 340
+			Y: 260
+			Width: 36
+			Height: 20
+			MaxLength: 3
+		Label@STARTING_MINE_INTER_DIST_LABEL:
+			X: 220
+			Y: 300
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Min. dist. between starting mines
+		Slider@STARTING_MINE_INTER_DIST_SLIDER:
+			X: 220
+			Y: 340
+			Width: 120
+			Height: 20
+			MinimumValue: 1
+			MaximumValue: 20
+			Ticks: 20
+		TextField@STARTING_MINE_INTER_DIST_FIELD:
+			X: 340
+			Y: 340
+			Width: 28
+			Height: 20
+			MaxLength: 2
+
+		Label@EXTRA_MINE_NUM_LABEL:
+			X: 400
+			Y: 60
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Extra mines
+		Slider@EXTRA_MINE_NUM_SLIDER:
+			X: 400
+			Y: 100
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 20
+			Ticks: 21
+		TextField@EXTRA_MINE_NUM_FIELD:
+			X: 520
+			Y: 100
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@EXTRA_MINE_DIST_LABEL:
+			X: 400
+			Y: 140
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Extra mine min. dist.
+		Slider@EXTRA_MINE_DIST_SLIDER:
+			X: 400
+			Y: 180
+			Width: 120
+			Height: 20
+			MinimumValue: 1
+			MaximumValue: 20
+			Ticks: 20
+		TextField@EXTRA_MINE_DIST_FIELD:
+			X: 520
+			Y: 180
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@EXTRA_MINE_SIZE_LABEL:
+			X: 400
+			Y: 220
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Extra mine size
+		Slider@EXTRA_MINE_SIZE_SLIDER:
+			X: 400
+			Y: 260
+			Width: 120
+			Height: 20
+			MinimumValue: 1
+			MaximumValue: 128
+			Ticks: 128
+		TextField@EXTRA_MINE_SIZE_FIELD:
+			X: 520
+			Y: 260
+			Width: 36
+			Height: 20
+			MaxLength: 3
+
+		Label@DEBRIS_NUM_GROUPS_LABEL:
+			X: 580
+			Y: 60
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Debris groups
+		Slider@DEBRIS_NUM_GROUPS_SLIDER:
+			X: 580
+			Y: 100
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 40
+			Ticks: 41
+		TextField@DEBRIS_NUM_GROUPS_FIELD:
+			X: 700
+			Y: 100
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@DEBRIS_NUM_PER_GROUP_LABEL:
+			X: 580
+			Y: 140
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Debris per group
+		Slider@DEBRIS_NUM_PER_GROUP_SLIDER:
+			X: 580
+			Y: 180
+			Width: 120
+			Height: 20
+			MinimumValue: 1
+			MaximumValue: 20
+			Ticks: 20
+		TextField@DEBRIS_NUM_PER_GROUP_FIELD:
+			X: 700
+			Y: 180
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@DEBRIS_GROUP_SIZE_LABEL:
+			X: 580
+			Y: 220
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Debris group area
+		Slider@DEBRIS_GROUP_SIZE_SLIDER:
+			X: 580
+			Y: 260
+			Width: 120
+			Height: 20
+			MinimumValue: 1
+			MaximumValue: 20
+			Ticks: 20
+		TextField@DEBRIS_GROUP_SIZE_FIELD:
+			X: 700
+			Y: 260
+			Width: 28
+			Height: 20
+			MaxLength: 2
+
+		Label@CLIFF_NUM_LABEL:
+			X: 400
+			Y: 380
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliffs
+		Slider@CLIFF_NUM_SLIDER:
+			X: 400
+			Y: 420
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 20
+			Ticks: 21
+		TextField@CLIFF_NUM_FIELD:
+			X: 520
+			Y: 420
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@CLIFF_JITTER_LABEL:
+			X: 400
+			Y: 460
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliff Jitter
+		Slider@CLIFF_JITTER_SLIDER:
+			X: 400
+			Y: 500
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 100
+			Ticks: 101
+		TextField@CLIFF_JITTER_FIELD:
+			X: 520
+			Y: 500
+			Width: 36
+			Height: 20
+			MaxLength: 3
+		Label@CLIFF_AVERAGE_SIZE_LABEL:
+			X: 580
+			Y: 380
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliff Avg. Size
+		Slider@CLIFF_AVERAGE_SIZE_SLIDER:
+			X: 580
+			Y: 420
+			Width: 120
+			Height: 20
+			MinimumValue: 5
+			MaximumValue: 40
+			Ticks: 36
+		TextField@CLIFF_AVERAGE_SIZE_FIELD:
+			X: 700
+			Y: 420
+			Width: 28
+			Height: 20
+			MaxLength: 2
+		Label@CLIFF_SIZE_VARIANCE_LABEL:
+			X: 580
+			Y: 460
+			Align: Left
+			Width: 120
+			Height: 20
+			Text: Cliff Size Variance
+		Slider@CLIFF_SIZE_VARIANCE_SLIDER:
+			X: 580
+			Y: 500
+			Width: 120
+			Height: 20
+			MinimumValue: 0
+			MaximumValue: 10
+			Ticks: 11
+		TextField@CLIFF_SIZE_VARIANCE_FIELD:
+			X: 700
+			Y: 500
+			Width: 28
+			Height: 20
+			MaxLength: 2
+
+		Button@BUTTON_GENERATE:
+			X: PARENT_RIGHT - 270
+			Y: PARENT_BOTTOM - 45
+			Width: 120
+			Height: 25
+			Text: Generate
+			Font: Bold
+			Key: return
+		Button@BUTTON_CANCEL:
+			X: PARENT_RIGHT - 140
+			Y: PARENT_BOTTOM - 45
+			Width: 120
+			Height: 25
+			Text: Cancel
+			Font: Bold
+			Key: escape

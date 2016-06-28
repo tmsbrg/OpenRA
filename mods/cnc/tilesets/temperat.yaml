@@ -5,6 +5,35 @@ General:
 	EditorTemplateOrder: Terrain, Debris, Road, Cliffs, Beach, River, Bridge
 	HeightDebugColors: AA0000
 
+Generator:
+	Debris:
+		LandDebris: 67, 68, 69, 70, 82
+    SimpleCliffs:
+        # explanation: in temperat.yaml
+        # straight
+        SN: 36, 37, 38
+        NS: 22, 23, 24
+        WE: 15, 16, 17
+        EW: 29, 30, 31
+        # corners
+        EN: 45
+        NE: 41
+        NW: 48
+        WN: 44
+        SE: 46
+        ES: 42
+        WS: 47
+        SW: 43
+        # edges
+        _N: 40
+        _E: 13
+        _S: 20
+        _W: 33
+        N_: 26
+        E_: 27
+        S_: 34
+        W_: 19
+
 Terrain:
 	TerrainType@Beach:
 		Type: Beach

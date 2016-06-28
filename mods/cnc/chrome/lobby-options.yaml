@@ -27,6 +27,13 @@ Background@LOBBY_OPTIONS_BIN:
 					Height: 20
 					Font: Regular
 					Text: Fog of War
+				Button@MAP_GENERATION_BUTTON:
+					Y: 70
+					X: 185
+					Width: 120
+					Height: 25
+					Font: Regular
+					Text: Map generation
 				Checkbox@CRATES_CHECKBOX:
 					X: 170
 					Width: 225
