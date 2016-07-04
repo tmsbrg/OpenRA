@@ -131,7 +131,7 @@ namespace OpenRA.Mods.Common
 			return true;
 		}
 
-		List<CPos> GetPoissonLocations(Map map, int num, int minDistance, int edgeDistance, int size=1)
+		List<CPos> GetPoissonLocations(Map map, int num, int minDistance, int edgeDistance, int size=1, bool occupy=false)
 		{
 			var sampler = new PoissonDiskSampler(edgeDistance, 6, rng);
 
@@ -145,6 +145,10 @@ namespace OpenRA.Mods.Common
 				if (!IsAreaOccupied(point, size))
 				{
 					locations.Add(point);
+					if (occupy)
+					{
+						OccupyTilesInSquare(point, size);
+					}
 				}
 			}
 			return locations;
@@ -222,7 +226,20 @@ namespace OpenRA.Mods.Common
 			}
 		}
 
-		void PlaceDebris(CPos location, int size, int num, Map map)
+		void PlaceDebrisGroup(CPos location, int size, int num, Map map)
+		{
+			var tileset = GetTileset();
+			if (tileset.Generator == null || tileset.Generator.Debris == null
+					|| tileset.Generator.Debris.LandDebris == null) return;
+
+			for (var i = 0; i < num; i++)
+			{
+				CPos cell = location + GetRandomVecWithDistance(rng.Next(0, size));
+				PlaceDebrisTile(cell, map);
+			}
+		}
+
+		void PlaceDebrisTile(CPos location, Map map)
 		{
 			var tileset = GetTileset();
 			if (tileset.Generator == null || tileset.Generator.Debris == null
@@ -230,17 +247,13 @@ namespace OpenRA.Mods.Common
 
 			var debris = tileset.Generator.Debris.LandDebris;
 
-			for (var i = 0; i < num; i++)
-			{
-				var index = debris[rng.Next(0, debris.Count())];
-				var template = tileset.Templates[index];
-				CPos cell = location + GetRandomVecWithDistance(rng.Next(0, size));
+			var index = debris[rng.Next(0, debris.Count())];
+			var template = tileset.Templates[index];
 
-				if (!IsAreaOccupied(cell, 1))
-				{
-					PlaceTile(cell, template, map);
-					OccupyTilesInSquare(cell, 1);
-				}
+			if (!IsAreaOccupied(location, 1))
+			{
+				PlaceTile(location, template, map);
+				OccupyTilesInSquare(location, 1);
 			}
 		}
 
@@ -278,7 +291,7 @@ namespace OpenRA.Mods.Common
 
 			var cliffTileSize = 2;
 			var cliffDistance = cliffTileSize * 4; // arbitrary, but to keep them from being too close
-			var cliffStartLocations = GetPoissonLocations(map, settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize);
+			var cliffStartLocations = GetPoissonLocations(map, settings.cliffNum, cliffDistance, cliffTileSize, cliffTileSize, true);
 
 			var cliffDirections = new []
 			{
@@ -603,12 +616,12 @@ namespace OpenRA.Mods.Common
 
 			foreach (var location in debrisLocations)
 			{
-				PlaceDebris(location, settings.debrisGroupSize, settings.debrisNumPerGroup, map);
+				PlaceDebrisGroup(location, settings.debrisGroupSize, settings.debrisNumPerGroup, map);
 			}
 
 			// Extra resources
 			var extraResourceLocations = GetPoissonLocations(map, settings.extraMineNum, settings.extraMineDistance,
-					settings.extraMineDistance);
+					settings.extraMineDistance, occupy: true);
 
 			foreach (var location in extraResourceLocations)
 			{
