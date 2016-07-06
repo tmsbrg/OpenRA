@@ -7,8 +7,9 @@ General:
 
 Generator:
 	Debris:
-		LandDebris: 97, 216, 217, 218, 219, 220, 221, 222
-		WaterDebris: 57, 500, 505
+		LandDebris: 97, 98, 99, 216, 217, 218, 219, 220, 221, 222, 223, 225, 226, 103, 104, 105, 106, 107, 108, 109, 110, 
+            580, 581, 582, 583, 584, 585, 586, 587, 588, 400
+		WaterDebris: 57, 58, 500, 501, 502, 503, 504, 505, 506, 507, 508
     SimpleCliffs:
         # explanation: letter 1 is the direction
         # to previous tile, letter 2 is the direction

@@ -250,10 +250,10 @@ namespace OpenRA.Mods.Common
 			var index = debris[rng.Next(0, debris.Count())];
 			var template = tileset.Templates[index];
 
-			if (!IsAreaOccupied(location, 1))
+			if (!IsAreaOccupied(location, template))
 			{
 				PlaceTile(location, template, map);
-				OccupyTilesInSquare(location, 1);
+				OccupyTiles(location, template);
 			}
 		}
 
@@ -505,6 +505,23 @@ namespace OpenRA.Mods.Common
 			return Direction.EAST;
 		}
 
+		bool IsAreaOccupied(CPos pos, TerrainTemplateInfo template)
+		{
+			var i = 0;
+			for (var y = 0; y < template.Size.Y; y++)
+			{
+				for (var x = 0; x < template.Size.X; x++, i++)
+				{
+					if (template.Contains(i) && template[i] != null)
+					{
+						var p = pos + new CVec(x, y);
+						if (occupiedMap.Contains(p) && occupiedMap[p]) return true;
+					}
+				}
+			}
+			return false;
+		}
+
 		bool IsAreaOccupied(CPos pos, int size)
 		{
 			for (var x = 0; x < size; x++)
@@ -542,6 +559,22 @@ namespace OpenRA.Mods.Common
 					if (occupiedMap.Contains(p) && (x * x) + (y * y) <= radius * radius)
 					{
 						occupiedMap[p] = true;
+					}
+				}
+			}
+		}
+
+		void OccupyTiles(CPos pos, TerrainTemplateInfo template)
+		{
+			var i = 0;
+			for (var y = 0; y < template.Size.Y; y++)
+			{
+				for (var x = 0; x < template.Size.X; x++, i++)
+				{
+					if (template.Contains(i) && template[i] != null)
+					{
+						var p = pos + new CVec(x, y);
+						if (occupiedMap.Contains(p)) occupiedMap[p] = true;
 					}
 				}
 			}
