@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System.Collections.Generic;
 using System;
 
 namespace OpenRA
@@ -58,10 +59,73 @@ namespace OpenRA
 		}
 	}
 
+	public class CliffConnection
+	{
+		public string Type;
+		public int2 Position;
+
+		public CliffConnection(string val)
+		{
+			var s = FieldLoader.GetValue<string[]>("", val);
+			Type = s[0];
+			Position = new int2(Exts.ParseIntegerInvariant(s[1]), Exts.ParseIntegerInvariant(s[2]));
+		}
+	}
+
+	public class CliffTemplateInfo
+	{
+		public readonly ushort[] Tiles;
+		[FieldLoader.Ignore]
+		public readonly IReadOnlyList<CliffConnection> Connections;
+
+		public CliffTemplateInfo(MiniYaml my)
+		{
+			FieldLoader.Load(this, my);
+			var md = my.ToDictionary();
+			var connections = md["Connections"];
+			var l = new List<CliffConnection>(connections.Nodes.Count);
+			foreach (var node in connections.Nodes)
+			{
+				l.Add(new CliffConnection(node.Key));
+			}
+			Connections = new ReadOnlyList<CliffConnection>(l);
+		}
+	}
+
+	public class CliffSetInfo
+	{
+		public readonly IReadOnlyDictionary<string, string> Connections;
+		public readonly IReadOnlyList<CliffTemplateInfo> Templates;
+
+		public CliffSetInfo(MiniYaml my)
+		{
+			var md = my.ToDictionary();
+			// TODO: better error when missing
+			var connections = md["Connections"];
+			var d = new Dictionary<string, string>();
+			foreach (var node in connections.Nodes)
+			{
+				var s = FieldLoader.GetValue<string[]>("", node.Key);
+				d.Add(s[0], s[1]);
+				d.Add(s[1], s[0]);
+			}
+			Connections = new ReadOnlyDictionary<string, string>(d);
+
+			var templates = md["Templates"];
+			var l = new List<CliffTemplateInfo>(templates.Nodes.Count);
+			foreach (var node in templates.Nodes)
+			{
+				l.Add(new CliffTemplateInfo(node.Value));
+			}
+			Templates = new ReadOnlyList<CliffTemplateInfo>(l);
+		}
+	}
+
 	public class GeneratorInfo
 	{
 		public readonly DebrisSetInfo Debris;
 		public readonly SimpleCliffSetInfo SimpleCliffs;
+		public readonly CliffSetInfo Cliffs;
 
 		public GeneratorInfo(MiniYaml my)
 		{
@@ -74,6 +138,10 @@ namespace OpenRA
 			if (md.ContainsKey("SimpleCliffs"))
 			{
 				SimpleCliffs = new SimpleCliffSetInfo(md["SimpleCliffs"]);
+			}
+			else if (md.ContainsKey("Cliffs"))
+			{
+				Cliffs = new CliffSetInfo(md["Cliffs"]);
 			}
 		}
 	}

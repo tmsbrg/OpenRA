@@ -9,31 +9,109 @@ General:
 Generator:
 	Debris:
 		LandDebris: 2, 3, 4, 5, 6, 7, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44
-    SimpleCliffs:
-        # explanation: in temperat.yaml
-        # straight
-        SN: 204, 205, 206
-        NS: 189, 190, 191
-        WE: 182, 183, 184
-        EW: 196, 197, 198
-        # corners
-        EN: 213
-        NE: 209
-        NW: 216
-        WN: 212
-        SE: 214
-        ES: 210
-        WS: 215
-        SW: 211
-        # edges
-        _N: 208
-        _E: 180
-        _S: 187
-        _W: 200
-        N_: 193
-        E_: 194
-        S_: 202
-        W_: 186
+	Cliffs:
+		Connections:
+			 RN, RS # Right facing, north-south connection
+			 LN, LS # Left facing, north-south connection
+			 FE, FW # Forward facing, east-west connection
+			 BE, BW # Backward facing, east-west connection
+		Templates:
+			  # straight
+			- Template:
+				Tiles: 204, 205, 206
+				Connections:
+					RN, 0, 0
+					RS, 0, 2
+			- Template:
+				Tiles: 189, 190, 191
+				Connections:
+					LN, 0, 0
+					LS, 0, 2
+			- Template:
+				Tiles: 182, 183, 184
+				Connections:
+					FW, 0, 0
+					FE, 2, 0
+			- Template:
+				Tiles: 196, 197, 198
+				Connections:
+					BW, 0, 0
+					BE, 2, 0
+
+			  # corner
+			- Template:
+				Tiles: 213
+				Connections:
+					RN, 0, 0
+					BE, 2, 0
+			- Template:
+				Tiles: 209
+				Connections:
+					LN, 0, 0
+					FE, 2, 0
+			- Template:
+				Tiles: 216
+				Connections:
+					LN, 0, 0
+					BW, 0, 0
+			- Template:
+				Tiles: 212
+				Connections:
+					RN, 0, 0
+			- Template:
+				Tiles: 214
+				Connections:
+					RS, 0, 2
+					FE, 2, 0
+			- Template:
+				Tiles: 210
+				Connections:
+					LS, 0, 2
+					BE, 2, 0
+			- Template:
+				Tiles: 215
+				Connections:
+					LS, 0, 2
+					FW, 0, 0
+			- Template:
+				Tiles: 211
+				Connections:
+					RS, 0, 2
+					BW, 0, 0
+
+			  # edges
+			- Template:
+				Tiles: 208
+				Connections:
+					RN, 0, 0
+			- Template:
+				Tiles: 180
+				Connections:
+					FE, 2, 0
+			- Template:
+				Tiles: 187
+				Connections:
+					LS, 0, 2
+			- Template:
+				Tiles: 200
+				Connections:
+					BW, 0, 0
+			- Template:
+				Tiles: 193
+				Connections:
+					LN, 0, 0
+			- Template:
+				Tiles: 194
+				Connections:
+					BE, 0, 0
+			- Template:
+				Tiles: 202
+				Connections:
+					RS, 0, 0
+			- Template:
+				Tiles: 186
+				Connections:
+					FW, 0, 0
 
 Terrain:
 	TerrainType@Beach:
