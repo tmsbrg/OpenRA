@@ -34,19 +34,27 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			panel.Layout = new GridLayout(panel);
 
 			var tileCategorySelector = widget.Get<DropDownButtonWidget>("TILE_CATEGORY");
-			var categories = tileset.EditorTemplateOrder;
+			var categories = tileset.EditorTemplateOrder.ToList();
+			categories.Add("Autobeach");
 			Func<string, ScrollItemWidget, ScrollItemWidget> setupItem = (option, template) =>
 			{
 				var item = ScrollItemWidget.Setup(template,
 					() => tileCategorySelector.Text == option,
-					() => { tileCategorySelector.Text = option; IntializeTilePreview(widget, worldRenderer, tileset, option); });
+					() => {
+					tileCategorySelector.Text = option;
+						if (option == "Autobeach") {
+							Console.WriteLine("Autobeach!");
+						} else {
+							IntializeTilePreview(widget, worldRenderer, tileset, option);
+						}
+					});
 
 				item.Get<LabelWidget>("LABEL").GetText = () => option;
 				return item;
 			};
 
 			tileCategorySelector.OnClick = () =>
-				tileCategorySelector.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 270, categories, setupItem);
+				tileCategorySelector.ShowDropDown("LABEL_DROPDOWN_TEMPLATE", 270, categories.ToArray(), setupItem);
 
 			tileCategorySelector.Text = categories.First();
 			IntializeTilePreview(widget, worldRenderer, tileset, categories.First());
